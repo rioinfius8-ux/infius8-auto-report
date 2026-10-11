@@ -223,6 +223,7 @@ body.present .kpi .v{font-size:34px}
     <div class="map-grid" id="mapGrid"></div>
     <div class="rules">
       <label><input type="checkbox" id="ruleDup" checked> Exclude duplicate IDs from totals</label>
+      <label><input type="checkbox" id="ruleOpen" checked> Exclude open (pending, started, suspended) from completion rate</label>
       <label><input type="checkbox" id="ruleCancel"> Exclude cancelled from completion rate</label>
     </div>
     <div class="sg-wrap"><h3>Status groups</h3><p class="small" style="margin:0 0 8px">How each status value counts in the report.</p><div class="sg" id="sg"></div></div>
@@ -261,8 +262,8 @@ body.present .kpi .v{font-size:34px}
         <div class="att"><h3 style="font-size:15px">Needs attention</h3><ul id="attention"></ul></div>
       </div>
       <div class="charts">
-        <div class="card"><h3>Area summary</h3><div class="small">Completion rate per area</div><div class="tbl" id="areaTbl"></div></div>
-        <div class="card"><h3>Activity types</h3><div class="small">Top 10 by volume</div><div class="cbox" id="typeBox"><canvas id="chType"></canvas></div></div>
+        <div class="card wide"><h3>Area summary</h3><div class="small">Completion rate per area</div><div class="tbl" id="areaTbl"></div></div>
+        <div class="card wide"><h3>Activity types</h3><div class="small">Top 10 by volume</div><div class="cbox" id="typeBox"><canvas id="chType"></canvas></div></div>
         <div class="card wide"><h3>Resources</h3><div class="small" id="resSub">Top 15 by volume</div><div class="tbl" id="resTbl"></div></div>
       </div>
     </div>
@@ -290,8 +291,11 @@ const dLabel=d=>`${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 const ls={get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
 
-const GROUPS=['Completed','Not completed','Cancelled','Other'];
-const GCOL={'Completed':'good','Not completed':'crit','Cancelled':'muted','Other':'warn'};
+const GROUPS=['Completed','Not completed','Open','Cancelled','Other'];
+const GCOL={'Completed':'good','Not completed':'crit','Open':'warn','Cancelled':'muted','Other':'c3'};
+const exOpen=()=>state.rules.open!==false;
+const rateBase=o=>o.total-(state.rules.cancel?o.Cancelled:0)-(exOpen()?o.Open:0);
+const rateDesc=()=>{const x=[exOpen()&&'open',state.rules.cancel&&'cancelled'].filter(Boolean);return x.length?`Completed ÷ all activities except ${x.join(' and ')}`:'Completed ÷ all activities'};
 const ROLES=[
  {key:'id',label:'Record ID',kw:[/activity\s*id/,/\bid\b/,/ticket/,/work\s*order/,/\bw\.?o\b/,/appt/,/number|\bno\b/]},
  {key:'status',label:'Status',kw:[/activity\s*status/,/status/,/\bstate\b/]},
@@ -302,7 +306,7 @@ const ROLES=[
  {key:'value',label:'Measure (number)',kw:[/duration/,/amount/,/cost/,/hours?\b/,/minutes?/,/travel/,/qty|quantity/,/total/]}
 ];
 
-const state={files:[],map:{},sg:{},rules:{dup:true,cancel:false},sample:true,filters:{area:'all',period:'all',from:'',to:''},titleAuto:true,recs:[],val:null,prof:{},headers:[],sig:''};
+const state={files:[],map:{},sg:{},rules:{dup:true,cancel:false,open:true},sample:true,filters:{area:'all',period:'all',from:'',to:''},titleAuto:true,recs:[],val:null,prof:{},headers:[],sig:''};
 let charts={};
 
 /* ---------- periods ---------- */
@@ -348,13 +352,14 @@ function dlt(cur,prv,mode,goodUp){
 
 /* ---------- parsing ---------- */
 function mk(y,m,d){if(m<1||m>12||d<1||d>31)return null;const x=new Date(y,m-1,d);return x.getMonth()===m-1?x:null}
-function toDate(v,serial){
+function dateOrder(vals){let dm=0,md=0;for(const v of vals){if(typeof v!=='string')continue;const m=v.trim().match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-]\d{2,4}/);if(!m)continue;if(+m[1]>12)dm++;else if(+m[2]>12)md++}return dm>md?'dmy':md?'mdy':null}
+function toDate(v,serial,order){
   if(v==null||v==='')return null;
   if(v instanceof Date)return isNaN(v)?null:new Date(v.getFullYear(),v.getMonth(),v.getDate());
   if(typeof v==='number'){if(serial&&v>20000&&v<80000){const d=new Date(Math.round((v-25569)*864e5));return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())}return null}
   const s=String(v).trim();let m;
   if((m=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/)))return mk(+m[1],+m[2],+m[3]);
-  if((m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})\b/))){let y=+m[3];if(y<100)y+=2000;let mo=+m[1],d=+m[2];if(mo>12&&d<=12)[mo,d]=[d,mo];return mk(y,mo,d)}
+  if((m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})\b/))){let y=+m[3];if(y<100)y+=2000;let mo=+m[1],d=+m[2];if(order==='dmy'||(!order&&mo>12&&d<=12))[mo,d]=[d,mo];return mk(y,mo,d)}
   if(/[a-z]{3}/i.test(s)&&/\d{1,2}/.test(s)&&/\d{4}/.test(s)){const t=Date.parse(s);if(!isNaN(t)){const d=new Date(t);return new Date(d.getFullYear(),d.getMonth(),d.getDate())}}
   return null;
 }
@@ -422,7 +427,7 @@ function classify(v){const s=String(v||'').toLowerCase().trim();
   if(/cancel|void/.test(s))return 'Cancelled';
   if(/not\s*done|not\s*complet|incomplete|fail|unsuccess|reject/.test(s))return 'Not completed';
   if(/complet|\bdone\b|closed|resolved|finish|success|validated|accomplish/.test(s))return 'Completed';
-  if(/pend|start|suspend|open|ongoing|progress|en\s?route|assigned|hold|resched|deferred|not\s*started/.test(s))return 'Not completed';
+  if(/pend|start|suspend|open|ongoing|progress|en\s?route|assigned|hold|resched|deferred|not\s*started|scheduled/.test(s))return 'Open';
   return 'Other'}
 function formats(){return ls.get('i8ar.formats',{})}
 function saveFormat(){if(state.sample)return;const f=formats();f[state.sig]={map:state.map,sg:state.sg,rules:state.rules};ls.set('i8ar.formats',f)}
@@ -437,28 +442,30 @@ function build(){
     const ix=k=>m[k]&&!m[k].startsWith('__')?s.headers.indexOf(m[k]):-1;
     const I={id:ix('id'),status:ix('status'),area:ix('area'),resource:ix('resource'),type:ix('type'),date:ix('date'),value:ix('value')};
     const fileBase=f.name.replace(/\.[^.]+$/,'');
+    const order=I.date>=0?dateOrder(s.rows.map(r=>r[I.date])):null;
     s.rows.forEach((r,ri)=>{
       v.read++;const iss=[];
       const g=k=>I[k]>=0?r[I[k]]:null;
       const id=blank(g('id'))?'':String(g('id')).trim();
       const stRaw=blank(g('status'))?'':String(g('status')).trim();
       let area=m.area==='__file'?fileBase:m.area==='__sheet'?s.name:(blank(g('area'))?'':String(g('area')).trim());
-      const dRaw=g('date');const date=m.date?toDate(dRaw,serial):null;
+      const dRaw=g('date');const date=m.date?toDate(dRaw,serial,order):null;
       const vRaw=g('value');const val=m.value?toNum(vRaw):null;
       if(m.id&&!id){v.noId++;iss.push('Missing ID')}
       if(m.status&&!stRaw){v.noStatus++;iss.push('Missing status')}
       if(m.date){if(blank(dRaw)){v.noDate++;iss.push('Missing date')}else if(!date){v.badDate++;iss.push('Invalid date')}else if(date>=tomorrow){v.future++;iss.push('Date is in the future')}}
       if(m.area&&!area){v.noArea++;iss.push('Missing area')}
       if(m.value&&!blank(vRaw)&&val==null){v.badNum++;iss.push('Not a number')}
-      let dup=false;
-      if(m.id&&id){const k=id.toLowerCase();if(seen.has(k)){dup=true;v.dup++;iss.push('Duplicate ID')}else seen.set(k,1)}
       const status=stRaw||'(Blank)';
       const rec={src:`${f.name} › ${s.name}`,row:s.rowNums[ri],id,status,group:state.sg[status]||classify(stRaw),area:area||'(Blank)',
-        resource:blank(g('resource'))?'(Blank)':String(g('resource')).trim(),type:blank(g('type'))?'(Blank)':String(g('type')).trim(),date,val,dup,iss};
+        resource:blank(g('resource'))?'(Blank)':String(g('resource')).trim(),type:blank(g('type'))?'(Blank)':String(g('type')).trim(),date,val,dup:false,iss};
       recs.push(rec);
-      if(iss.length&&v.samples.length<200)v.samples.push(rec);
     });
   }
+  // duplicates: keep the LAST copy (later sheet/file = newer export), flag older copies
+  if(m.id)for(let i=recs.length-1;i>=0;i--){const r=recs[i];if(!r.id)continue;const k=r.id.toLowerCase();
+    if(seen.has(k)){r.dup=true;v.dup++;r.iss.push('Older copy of duplicate ID')}else seen.set(k,1)}
+  for(const r of recs){if(r.iss.length){v.samples.push(r);if(v.samples.length>=200)break}}
   state.recs=recs;state.val=v;
 }
 function statusValues(){const c=new Map();state.recs.forEach(r=>c.set(r.status,(c.get(r.status)||0)+1));return [...c].sort((a,b)=>b[1]-a[1])}
@@ -476,8 +483,8 @@ function weeklyArea(end){
   const vol=new Map();win.forEach(r=>vol.set(r.area,(vol.get(r.area)||0)+1));
   const areas=[...vol].sort((x,y)=>y[1]-x[1]).slice(0,6).map(x=>x[0]);
   const cell=new Map();
-  win.forEach(r=>{if(!areas.includes(r.area))return;const k=r.area+'|'+dKey(weekStart(r.date));const o=cell.get(k)||{t:0,c:0,x:0};o.t++;if(r.group==='Completed')o.c++;if(r.group==='Cancelled')o.x++;cell.set(k,o)});
-  const series=areas.map(ar=>({name:ar,vals:weeks.map(w=>{const o=cell.get(ar+'|'+dKey(w));if(!o)return null;const base=state.rules.cancel?o.t-o.x:o.t;return base?+pct(o.c,base).toFixed(1):null})}));
+  win.forEach(r=>{if(!areas.includes(r.area))return;const k=r.area+'|'+dKey(weekStart(r.date));const o=cell.get(k)||{total:0,Completed:0,Cancelled:0,Open:0};o.total++;if(r.group in o)o[r.group]++;cell.set(k,o)});
+  const series=areas.map(ar=>({name:ar,vals:weeks.map(w=>{const o=cell.get(ar+'|'+dKey(w));if(!o)return null;const base=rateBase(o);return base?+pct(o.Completed,base).toFixed(1):null})}));
   return {labels:weeks.map(w=>`${MON[w.getMonth()]} ${w.getDate()}`),series,more:vol.size>6};
 }
 function compute(rs){
@@ -487,9 +494,9 @@ function compute(rs){
   rs.forEach(r=>{st.groups[r.group]++;bump(st.byArea,r.area,r.group);bump(st.byType,r.type,r.group);bump(st.byRes,r.resource,r.group);
     st.byStatus.set(r.status,{n:(st.byStatus.get(r.status)?.n||0)+1,g:r.group});
     if(r.date)st.dates.push(r.date);if(r.val!=null){st.valSum+=r.val;st.valN++}});
-  st.base=state.rules.cancel?st.total-st.groups['Cancelled']:st.total;
+  st.base=rateBase({total:st.total,...st.groups});
   st.rate=pct(st.groups['Completed'],st.base);
-  const rateOf=o=>pct(o.Completed,state.rules.cancel?o.total-o.Cancelled:o.total);
+  const rateOf=o=>pct(o.Completed,rateBase(o));
   st.rateOf=rateOf;
   if(st.dates.length){let mn=st.dates[0],mx=st.dates[0];st.dates.forEach(d=>{if(d<mn)mn=d;if(d>mx)mx=d});st.min=mn;st.max=mx}
   // trend
@@ -512,7 +519,7 @@ function insights(st){
   const areas=[...st.byArea].filter(([k])=>k!=='(Blank)');
   const period=st.min?` from <b>${dLabel(st.min)}</b> to <b>${dLabel(st.max)}</b>`:'';
   F.push(`<b>${fmt(st.total)}</b> activities${period}${areas.length>1?` across <b>${areas.length}</b> areas`:''}.`);
-  F.push(`Completion rate is <b>${fp(st.rate)}</b>: ${fmt(st.groups.Completed)} completed, ${fmt(st.groups['Not completed'])} not completed, ${fmt(st.groups.Cancelled)} cancelled.`);
+  F.push(`Completion rate is <b>${fp(st.rate)}</b> (${rateDesc()}): ${fmt(st.groups.Completed)} completed, ${fmt(st.groups['Not completed'])} not completed, ${fmt(st.groups.Open)} still open, ${fmt(st.groups.Cancelled)} cancelled.`);
   const pv=st.prev,pi=st.pi;
   if(pi&&st.cov){
     if(st.cov.cur)F.push(`Data for ${esc(pi.label)} only runs up to <b>${dLabel(st.cov.max)}</b>, so this period may still be incomplete.`);
@@ -541,14 +548,15 @@ function insights(st){
     const unit=t.gran==='day'?'day':t.gran==='week'?'week':'month';
     F.push(`Busiest ${unit}: <b>${t.labels[mi]}</b> with ${fmt(t.total[mi])} activities.`);
     if(!pi&&t.gran!=='day'&&t.keys.length>=2){const a=t.total[t.total.length-2],b=t.total[t.total.length-1];
-      if(a)F.push(`Latest ${unit} (${t.labels[t.labels.length-1]}) volume is ${fmt(b)}, ${b>=a?'up':'down'} ${fp(Math.abs(pct(b-a,a)))} from the ${unit} before${unit!=='day'?' (latest period may still be in progress)':''}.`)}}
+      if(a)F.push(`Latest ${unit} (${t.labels[t.labels.length-1]}) volume is ${fmt(b)}, ${b===a?'the same as':`${b>a?'up':'down'} ${fp(Math.abs(pct(b-a,a)))} from`} the ${unit} before${unit!=='day'?' (latest period may still be in progress)':''}.`)}}
   if(state.map.value&&st.valN)F.push(`${esc(state.map.value)}: total <b>${fmt(st.valSum,1)}</b>, average <b>${fmt(st.valSum/st.valN,1)}</b> per activity.`);
   const res=[...st.byRes].filter(([k,o])=>k!=='(Blank)'&&o.total>=10).map(([k,o])=>({k,o,r:st.rateOf(o)})).sort((a,b)=>a.r-b.r);
   if(res.length>=4){const low=res.slice(0,3).filter(x=>x.r<st.rate-5);if(low.length)A.push(`Lowest-completing resources (10+ activities): ${low.map(x=>`<b>${esc(x.k)}</b> ${fp(x.r)}`).join(', ')}.`)}
   if(st.groups['Not completed'])A.push(`<b>${fmt(st.groups['Not completed'])}</b> activities are not completed (${fp(pct(st.groups['Not completed'],st.total))}). Follow up for rescheduling or validation.`);
   if(st.groups.Other)A.push(`${fmt(st.groups.Other)} records have a status the report could not group. Set them under Status groups.`);
   if(v.future)A.push(`${fmt(v.future)} records have a date after today in "${esc(state.map.date)}". Check for day/month mix-ups in the source before trusting weekly figures.`);
-  if(v.dup)A.push(`${fmt(v.dup)} duplicate IDs found in the source${state.rules.dup?' and excluded from totals':''}.`);
+  if(st.groups.Open)A.push(`<b>${fmt(st.groups.Open)}</b> activities are still open (pending, started or suspended), ${fp(pct(st.groups.Open,st.total))} of the total.`);
+  if(v.dup)A.push(`${fmt(v.dup)} rows are older copies of the same activity ID (it appears in more than one sheet)${state.rules.dup?'. Only the latest copy is counted':''}.`);
   const miss=v.noStatus+v.badDate+v.noDate+v.noArea;
   if(miss)A.push(`${fmt(miss)} data gaps in the source (missing status, area or date, or invalid dates). Clean these in the Excel before the final report.`);
   if(!A.length)A.push('No major issues found in this dataset.');
@@ -578,7 +586,7 @@ function renderMap(){
     return `<div class="field"><label for="m_${r.key}">${r.label}</label><select id="m_${r.key}" data-role="${r.key}">${opts(r.key,cur)}</select><div class="ex">${p?esc(p.ex):cur.startsWith('__')?'Area comes from the '+(cur==='__file'?'file':'sheet')+' name':'&nbsp;'}</div></div>`}).join('');
   const mapped=ROLES.filter(r=>state.map[r.key]).length;
   $('#mapHint').textContent=`${mapped} of ${ROLES.length} fields mapped · ${fmt(state.headers.length)} columns found`;
-  $('#ruleDup').checked=state.rules.dup;$('#ruleCancel').checked=state.rules.cancel;
+  $('#ruleDup').checked=state.rules.dup;$('#ruleCancel').checked=state.rules.cancel;$('#ruleOpen').checked=exOpen();
   const sv=statusValues().slice(0,60);
   $('#sg').innerHTML=state.map.status?sv.map(([v,n],i)=>{const g=state.sg[v]||classify(v==='(Blank)'?'':v);
     return `<div class="sg-row"><span class="dot" style="background:var(--${GCOL[g]})"></span><span class="v" title="${esc(v)}">${esc(v)}</span><span class="c">${fmt(n)}</span><select data-sv="${i}" aria-label="Group for ${esc(v)}">${GROUPS.map(x=>`<option ${x===g?'selected':''}>${x}</option>`).join('')}</select></div>`}).join(''):'<div class="small">Map a Status column first.</div>';
@@ -589,7 +597,7 @@ function renderVal(){
   const bad=state.recs.filter(r=>r.iss.length).length;const q=pct(v.read-bad,v.read);
   const c=(cls,label,n)=>`<span class="chip ${cls}">${label} <b class="num">${n}</b></span>`;
   $('#vstrip').innerHTML=[c('','Rows read',fmt(v.read)),c('ok','Used in report',fmt(used)),c(q>=95?'ok':q>=80?'warn':'bad','Clean rows',fp(q)),
-    state.map.id?c(v.dup?'warn':'ok','Duplicate IDs',fmt(v.dup)):'',state.map.id?c(v.noId?'warn':'ok','Missing ID',fmt(v.noId)):'',
+    state.map.id?c(v.dup?'warn':'ok','Older copies (duplicate ID)',fmt(v.dup)):'',state.map.id?c(v.noId?'warn':'ok','Missing ID',fmt(v.noId)):'',
     state.map.status?c(v.noStatus?'bad':'ok','Missing status',fmt(v.noStatus)):'',state.map.date?c(v.noDate+v.badDate?'warn':'ok','Missing / invalid date',fmt(v.noDate+v.badDate)):'',state.map.date&&v.future?c('bad','Future dates',fmt(v.future)):'',
     state.map.area?c(v.noArea?'warn':'ok','Missing area',fmt(v.noArea)):'',state.map.value?c(v.badNum?'warn':'ok','Non-numeric measure',fmt(v.badNum)):''].join('');
   $('#valHint').textContent=bad?`${fmt(bad)} rows have at least one issue. They stay in the data and are flagged.`:'No issues found.';
@@ -616,8 +624,8 @@ function renderFilters(){
 
 /* ---------- charts ---------- */
 function tok(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
-function pal(){return {fg:tok('--ink'),fg2:tok('--ink-2'),grid:tok('--line'),accent:tok('--accent'),good:tok('--good'),crit:tok('--crit'),warn:tok('--warn'),muted:tok('--muted'),surface:tok('--surface'),cat:[1,2,3,4,5,6].map(i=>tok('--c'+i))}}
-const LIGHT={fg:'#13212C',fg2:'#4B5B68',grid:'#D7DFE4',accent:'#0A7480',good:'#2C8A57',crit:'#C2453B',warn:'#B9800C',muted:'#8B98A4',surface:'#FFFFFF',cat:['#0A7480','#C4622D','#5457C9','#AE3A78','#5F8A1E','#8C6A2E']};
+function pal(){return {fg:tok('--ink'),fg2:tok('--ink-2'),grid:tok('--line'),accent:tok('--accent'),good:tok('--good'),crit:tok('--crit'),warn:tok('--warn'),muted:tok('--muted'),c3:tok('--c3'),surface:tok('--surface'),cat:[1,2,3,4,5,6].map(i=>tok('--c'+i))}}
+const LIGHT={fg:'#13212C',fg2:'#4B5B68',grid:'#D7DFE4',accent:'#0A7480',good:'#2C8A57',crit:'#C2453B',warn:'#B9800C',muted:'#8B98A4',c3:'#5457C9',surface:'#FFFFFF',cat:['#0A7480','#C4622D','#5457C9','#AE3A78','#5F8A1E','#8C6A2E']};
 function alpha(hex,a){const h=hex.replace('#','');const n=parseInt(h.length===3?h.split('').map(c=>c+c).join(''):h,16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
 function scales(P,stacked,horiz){const ax={grid:{color:P.grid,drawTicks:false},border:{display:false},ticks:{color:P.fg2,padding:6},stacked};
   return horiz?{x:{...ax,beginAtZero:true},y:{...ax,grid:{display:false}}}:{x:{...ax,grid:{display:false}},y:{...ax,beginAtZero:true}}}
@@ -676,7 +684,7 @@ function renderReport(){
   const per=pi?pi.label:st.min?`${dLabel(st.min)} – ${dLabel(st.max)}`:'No dates mapped';
   $('#rMeta').textContent=`${per} · ${f.area==='all'?'All areas':f.area}${pi?` · compared with ${pi.plabel}`:''}`;
   const D=pv?{total:dlt(st.total,pv.total,'pct',null),rate:dlt(st.rate,pv.rate,'pts',true),done:dlt(st.groups.Completed,pv.groups.Completed,'pct',true),
-    nd:dlt(st.groups['Not completed'],pv.groups['Not completed'],'pct',false),cx:dlt(st.groups.Cancelled,pv.groups.Cancelled,'pct',false),
+    nd:dlt(st.groups['Not completed'],pv.groups['Not completed'],'pct',false),op:dlt(st.groups.Open,pv.groups.Open,'pct',null),cx:dlt(st.groups.Cancelled,pv.groups.Cancelled,'pct',false),
     val:st.valN&&pv.valN?dlt(st.valSum/st.valN,pv.valSum/pv.valN,'pct',null):null}:{};
   st.deltas=D;
   const dh=d=>d?`<span class="delta ${d.cls}">${d.txt} <small>vs ${pi.pname}${partial}</small></span>`:(pi?`<span class="delta neu"><small>no data for ${pi.pname}</small></span>`:'');
@@ -685,9 +693,10 @@ function renderReport(){
     const k=(l,v,s,d,cls='')=>`<div class="kpi ${cls}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span>${dh(d)}</div>`;
     $('#kpis').innerHTML=[
       k('Total activities',fmt(st.total),state.rules.dup&&state.val.dup?`${fmt(state.val.dup)} duplicates excluded`:'all records in view',D.total),
-      `<div class="kpi hero"><span class="l">Completion rate</span><span class="v">${fp(st.rate)}</span><div class="meter"><i style="width:${Math.min(100,st.rate)}%"></i></div><span class="s">${state.rules.cancel?'excl. cancelled':'of all activities'}</span>${dh(D.rate)}</div>`,
+      `<div class="kpi hero"><span class="l">Completion rate</span><span class="v">${fp(st.rate)}</span><div class="meter"><i style="width:${Math.min(100,st.rate)}%"></i></div><span class="s" title="${esc(rateDesc())}">${exOpen()||state.rules.cancel?`of ${fmt(st.base)} ${exOpen()?'closed':''} activities`:'of all activities'}</span>${dh(D.rate)}</div>`,
       k('Completed',fmt(st.groups.Completed),fp(pct(st.groups.Completed,st.total))+' of total',D.done),
-      k('Not completed',fmt(st.groups['Not completed']),fp(pct(st.groups['Not completed'],st.total))+' of total',D.nd),
+      k('Not completed',fmt(st.groups['Not completed']),fp(pct(st.groups['Not completed'],st.total))+' of total · not done',D.nd),
+      k('Open',fmt(st.groups.Open),fp(pct(st.groups.Open,st.total))+' of total · pending, started',D.op),
       k('Cancelled',fmt(st.groups.Cancelled),fp(pct(st.groups.Cancelled,st.total))+' of total',D.cx),
       state.map.value&&st.valN?k(esc(state.map.value),fmt(st.valSum/st.valN,1),`average · total ${fmt(st.valSum,0)}`,D.val):''
     ].join('');
@@ -702,10 +711,10 @@ function renderReport(){
   const rateCell=r=>{const col=r>=90?'var(--good)':r>=75?'var(--warn)':'var(--crit)';return `<div class="rate"><span class="num">${fp(r)}</span><span class="mb"><i style="width:${Math.min(100,r)}%;background:${col}"></i></span></div>`};
   const areas=[...st.byArea].sort((a,b)=>b[1].total-a[1].total);
   const areaD=k=>{const p=pv&&pv.byArea.get(k);return p?dlt(st.rateOf(st.byArea.get(k)),pv.rateOf(p),'pts',true):null};
-  $('#areaTbl').innerHTML=`<table><thead><tr><th>Area</th><th class="n">Total</th><th class="n">Done</th><th class="n">Not done</th><th class="n">Cancel</th><th class="n">Rate</th>${pi?`<th class="n">vs ${pi.pname}</th>`:''}</tr></thead><tbody>${areas.map(([k,o])=>{const d=pi&&areaD(k);return `<tr><td>${esc(k)}</td><td class="n">${fmt(o.total)}</td><td class="n">${fmt(o.Completed)}</td><td class="n">${fmt(o['Not completed'])}</td><td class="n">${fmt(o.Cancelled)}</td><td class="n">${rateCell(st.rateOf(o))}</td>${pi?`<td class="n">${d?`<span class="delta ${d.cls}">${d.txt}</span>`:'—'}</td>`:''}</tr>`}).join('')}</tbody></table>`;
+  $('#areaTbl').innerHTML=`<table><thead><tr><th>Area</th><th class="n">Total</th><th class="n">Done</th><th class="n">Not done</th><th class="n">Open</th><th class="n">Cancel</th><th class="n">Rate</th>${pi?`<th class="n">vs ${pi.pname}</th>`:''}</tr></thead><tbody>${areas.map(([k,o])=>{const d=pi&&areaD(k);return `<tr><td>${esc(k)}</td><td class="n">${fmt(o.total)}</td><td class="n">${fmt(o.Completed)}</td><td class="n">${fmt(o['Not completed'])}</td><td class="n">${fmt(o.Open)}</td><td class="n">${fmt(o.Cancelled)}</td><td class="n">${rateCell(st.rateOf(o))}</td>${pi?`<td class="n">${d?`<span class="delta ${d.cls}">${d.txt}</span>`:'—'}</td>`:''}</tr>`}).join('')}</tbody></table>`;
   const res=[...st.byRes].sort((a,b)=>b[1].total-a[1].total);
   $('#resSub').textContent=state.map.resource?`Top ${Math.min(15,res.length)} of ${fmt(res.length)} by volume`:'Map a Resource column to see this table';
-  $('#resTbl').innerHTML=state.map.resource?`<table><thead><tr><th>Resource</th><th class="n">Total</th><th class="n">Completed</th><th class="n">Not completed</th><th class="n">Cancelled</th><th class="n">Rate</th></tr></thead><tbody>${res.slice(0,15).map(([k,o])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(o.total)}</td><td class="n">${fmt(o.Completed)}</td><td class="n">${fmt(o['Not completed'])}</td><td class="n">${fmt(o.Cancelled)}</td><td class="n">${rateCell(st.rateOf(o))}</td></tr>`).join('')}</tbody></table>`:'';
+  $('#resTbl').innerHTML=state.map.resource?`<table><thead><tr><th>Resource</th><th class="n">Total</th><th class="n">Completed</th><th class="n">Not completed</th><th class="n">Open</th><th class="n">Cancelled</th><th class="n">Rate</th></tr></thead><tbody>${res.slice(0,15).map(([k,o])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(o.total)}</td><td class="n">${fmt(o.Completed)}</td><td class="n">${fmt(o['Not completed'])}</td><td class="n">${fmt(o.Open)}</td><td class="n">${fmt(o.Cancelled)}</td><td class="n">${rateCell(st.rateOf(o))}</td></tr>`).join('')}</tbody></table>`:'';
   drawCharts(st);
 }
 function renderAll(){
@@ -810,7 +819,7 @@ async function exportPDF(){
   doc.setTextColor(...rgb(P.fg));doc.setFont('helvetica','bold');doc.setFontSize(19);doc.text(title,M,86);
   doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...rgb(P.fg2));doc.text($('#rMeta').textContent.replace(/[–—]/g,'-'),M,101);
   // KPIs
-  const ks=[['Total activities',fmt(st.total),D.total],['Completion rate',fp(st.rate),D.rate],['Completed',fmt(st.groups.Completed),D.done],['Not completed',fmt(st.groups['Not completed']),D.nd],['Cancelled',fmt(st.groups.Cancelled),D.cx]];
+  const ks=[['Total activities',fmt(st.total),D.total],['Completion rate',fp(st.rate),D.rate],['Completed',fmt(st.groups.Completed),D.done],['Not completed',fmt(st.groups['Not completed']),D.nd],['Open',fmt(st.groups.Open),D.op],['Cancelled',fmt(st.groups.Cancelled),D.cx]];
   const kw=CW/ks.length;let y=114;const kh=pi?66:52;
   doc.setDrawColor(...rgb(P.grid));doc.setLineWidth(.7);doc.roundedRect(M,y,CW,kh,4,4,'S');
   ks.forEach(([l,v,d],i)=>{const x=M+i*kw;if(i)doc.line(x,y,x,y+kh);
@@ -826,7 +835,7 @@ async function exportPDF(){
   y=y+18+Math.max(190,aH);
   if(c.trend){h2(`Trend · activities per ${st.trend.gran}`,y+14);doc.addImage(chartImg(c.trend,CW,170),'PNG',M,y+22,CW,170);y+=200}
   // findings
-  const plain=s=>s.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/[–—]/g,'-').replace(/→/g,'->');
+  const plain=s=>s.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/[–—]/g,'-').replace(/→/g,'->').replace(/÷/g,'/');
   const list=(items,yy,col)=>{doc.setFont('helvetica','normal');doc.setFontSize(9.5);
     items.forEach(t=>{const lines=doc.splitTextToSize(plain(t),CW-14);if(yy+lines.length*12>H-50){doc.addPage();header();yy=80}
       doc.setFillColor(...rgb(col));doc.circle(M+3,yy-3,1.8,'F');doc.setTextColor(...rgb(P.fg));doc.text(lines,M+12,yy);yy+=lines.length*12+4});return yy};
@@ -836,25 +845,25 @@ async function exportPDF(){
   h2('Needs attention',y);y=list(st.ins.A,y+18,P.crit)+8;
   // area table
   const tStyle={theme:'plain',styles:{font:'helvetica',fontSize:8.5,cellPadding:4,textColor:rgb(P.fg),lineColor:rgb(P.grid),lineWidth:{bottom:.5}},headStyles:{fontStyle:'bold',textColor:rgb(P.fg2),fontSize:7.5},margin:{left:M,right:M,top:70},
-    didDrawPage:()=>{header()},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'},5:{halign:'right'},6:{halign:'right'}}};
+    didDrawPage:()=>{header()},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'},5:{halign:'right'},6:{halign:'right'},7:{halign:'right'}}};
   if(y>H-120){doc.addPage();header();y=82}
   h2('Area summary',y);
-  const row=([k,o])=>[k,fmt(o.total),fmt(o.Completed),fmt(o['Not completed']),fmt(o.Cancelled),fp(st.rateOf(o))];
+  const row=([k,o])=>[k,fmt(o.total),fmt(o.Completed),fmt(o['Not completed']),fmt(o.Open),fmt(o.Cancelled),fp(st.rateOf(o))];
   const pv=st.prev;
   const arow=e=>{const r=row(e);if(pi){const p=pv&&pv.byArea.get(e[0]);const d=p?dlt(st.rateOf(e[1]),pv.rateOf(p),'pts',true):null;r.push(d?d.plain:'-')}return r};
-  doc.autoTable({...tStyle,startY:y+8,head:[['Area','Total','Completed','Not completed','Cancelled','Rate',...(pi?['vs '+pi.pname]:[])]],body:[...st.byArea].sort((a,b)=>b[1].total-a[1].total).map(arow),
-    didParseCell:h=>{if(pi&&h.section==='body'&&h.column.index===6){const t=String(h.cell.raw);if(t.startsWith('+'))h.cell.styles.textColor=rgb(P.good);else if(t.startsWith('-')&&t!=='-')h.cell.styles.textColor=rgb(P.crit)}}});
+  doc.autoTable({...tStyle,startY:y+8,head:[['Area','Total','Completed','Not completed','Open','Cancelled','Rate',...(pi?['vs '+pi.pname]:[])]],body:[...st.byArea].sort((a,b)=>b[1].total-a[1].total).map(arow),
+    didParseCell:h=>{if(pi&&h.section==='body'&&h.column.index===7){const t=String(h.cell.raw);if(t.startsWith('+'))h.cell.styles.textColor=rgb(P.good);else if(t.startsWith('-')&&t!=='-')h.cell.styles.textColor=rgb(P.crit)}}});
   y=doc.lastAutoTable.finalY+26;
   if(y+c.typeH*.7>H-50){doc.addPage();header();y=82}
   h2('Activity types (top 10)',y);const th=Math.min(230,c.typeH*.7);doc.addImage(chartImg(c.type,CW,th),'PNG',M,y+8,CW,th);y+=th+30;
   if(state.map.resource){if(y>H-140){doc.addPage();header();y=82}
     h2('Resources (top 20 by volume)',y);
-    doc.autoTable({...tStyle,startY:y+8,head:[['Resource','Total','Completed','Not completed','Cancelled','Rate']],body:[...st.byRes].sort((a,b)=>b[1].total-a[1].total).slice(0,20).map(row)});
+    doc.autoTable({...tStyle,startY:y+8,head:[['Resource','Total','Completed','Not completed','Open','Cancelled','Rate']],body:[...st.byRes].sort((a,b)=>b[1].total-a[1].total).slice(0,20).map(row)});
     y=doc.lastAutoTable.finalY+26}
   // data quality
   const v=state.val;if(y>H-110){doc.addPage();header();y=82}
   h2('Data check',y);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...rgb(P.fg2));
-  const dq=`Rows read: ${fmt(v.read)} · Duplicate IDs: ${fmt(v.dup)}${state.rules.dup?' (excluded)':''} · Missing status: ${fmt(v.noStatus)} · Missing/invalid date: ${fmt(v.noDate+v.badDate)} · Missing area: ${fmt(v.noArea)}. Completion rate = Completed / ${state.rules.cancel?'(all activities - cancelled)':'all activities'}. Sources: ${state.files.map(f=>f.name).join(', ')}.`;
+  const dq=`Rows read: ${fmt(v.read)} · Older copies of duplicate IDs: ${fmt(v.dup)}${state.rules.dup?' (latest copy kept)':''} · Missing status: ${fmt(v.noStatus)} · Missing/invalid date: ${fmt(v.noDate+v.badDate)} · Future dates: ${fmt(v.future)} · Missing area: ${fmt(v.noArea)}. Completion rate = ${rateDesc().replace('÷','/')}. Sources: ${state.files.map(f=>f.name).join(', ')}.`;
   doc.text(doc.splitTextToSize(dq,CW),M,y+16);
   const pages=doc.getNumberOfPages();
   for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(7.5);doc.setTextColor(...rgb(P.fg2));doc.text(`INFIUS8 Auto Report · ${title}`,M,H-22);doc.text(`Page ${i} of ${pages}`,W-M,H-22,{align:'right'})}
@@ -871,9 +880,9 @@ async function exportXLSX(){
   const P2=pv?[pi.plabel]:[];const pvv=f=>pv?[f(pv)]:[];
   const kr=(l,f)=>[l,f(st),...pvv(f)];
   const sum=[['INFIUS8 Auto Report',$('#rTitle').value],['Scope',$('#rMeta').textContent],[],['Metric',pi?pi.label:'Selected data',...P2],
-    kr('Total activities',s=>s.total),kr('Completion rate (%)',s=>+s.rate.toFixed(1)),kr('Completed',s=>s.groups.Completed),kr('Not completed',s=>s.groups['Not completed']),kr('Cancelled',s=>s.groups.Cancelled),kr('Unclassified status',s=>s.groups.Other),[],
-    ['Area','Total','Completed','Not completed','Cancelled','Rate (%)',...(pv?['Rate '+pi.pname+' (%)','Change (pts)']:[])],
-    ...[...st.byArea].sort((a,b)=>b[1].total-a[1].total).map(([k,o])=>{const r=[k,o.total,o.Completed,o['Not completed'],o.Cancelled,+st.rateOf(o).toFixed(1)];
+    kr('Total activities',s=>s.total),kr('Completion rate (%)',s=>+s.rate.toFixed(1)),kr('Completed',s=>s.groups.Completed),kr('Not completed',s=>s.groups['Not completed']),kr('Open',s=>s.groups.Open),kr('Cancelled',s=>s.groups.Cancelled),kr('Unclassified status',s=>s.groups.Other),[],
+    ['Area','Total','Completed','Not completed','Open','Cancelled','Rate (%)',...(pv?['Rate '+pi.pname+' (%)','Change (pts)']:[])],
+    ...[...st.byArea].sort((a,b)=>b[1].total-a[1].total).map(([k,o])=>{const r=[k,o.total,o.Completed,o['Not completed'],o.Open,o.Cancelled,+st.rateOf(o).toFixed(1)];
       if(pv){const p=pv.byArea.get(k);r.push(p?+pv.rateOf(p).toFixed(1):null,p?+(st.rateOf(o)-pv.rateOf(p)).toFixed(1):null)}return r})];
   if(st.weekly){sum.push([],['Completion rate by week (%)',...st.weekly.labels]);st.weekly.series.forEach(s=>sum.push([s.name,...s.vals]))}
   const wb=XLSX.utils.book_new();
@@ -897,6 +906,7 @@ $('#mapGrid').addEventListener('change',ev=>{const s=ev.target;if(!s.dataset.rol
 $('#sg').addEventListener('change',ev=>{const s=ev.target;if(s.dataset.sv==null)return;const vals=JSON.parse($('#sg').dataset.vals||'[]');state.sg[vals[+s.dataset.sv]]=s.value;saveFormat();rebuild()});
 $('#ruleDup').addEventListener('change',e=>{state.rules.dup=e.target.checked;saveFormat();renderVal();renderReport()});
 $('#ruleCancel').addEventListener('change',e=>{state.rules.cancel=e.target.checked;saveFormat();renderReport()});
+$('#ruleOpen').addEventListener('change',e=>{state.rules.open=e.target.checked;saveFormat();renderReport()});
 $('#fArea').addEventListener('change',e=>{state.filters.area=e.target.value;renderReport()});
 $('#fPeriod').addEventListener('change',e=>{const F=state.filters;const prevPi=periodInfo();F.period=e.target.value;
   if(F.period==='custom'){
