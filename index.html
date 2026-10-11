@@ -363,7 +363,8 @@ function makeSheet(name,aoa,rowOff){
   for(let i=0;i<Math.min(25,aoa.length);i++){const r=aoa[i]||[];let s=0;for(const c of r){if(typeof c==='string'&&c.trim()&&isNaN(Number(c)))s++}if(s>best){best=s;hi=i}}
   const raw=aoa[hi]||[];const headers=[];const seen={};
   const rows=[],rowNums=[];
-  for(let i=hi+1;i<aoa.length;i++){const r=aoa[i];if(!r||!r.some(v=>!blank(v)))continue;rows.push(r);rowNums.push(i+1+rowOff)}
+  const isTotal=r=>r.some(v=>typeof v==='string'&&/^(grand\s*total|sub\s*total|total)$/i.test(v.trim()));
+  for(let i=hi+1;i<aoa.length;i++){const r=aoa[i];if(!r||!r.some(v=>!blank(v))||isTotal(r))continue;rows.push(r);rowNums.push(i+1+rowOff)}
   const len=rows.reduce((m,r)=>Math.max(m,r.length),raw.length);
   for(let i=0;i<len;i++){const h=raw[i];let n=blank(h)?`Column ${i+1}`:String(h).trim().replace(/\s+/g,' ');if(seen[n]){seen[n]++;n=`${n} (${seen[n]})`}else seen[n]=1;headers[i]=n}
   const pivot=/pivot|summary|summ\b/i.test(name)||headers.some(h=>/^(row labels|grand total|sum of|count of)/i.test(h))||rows.slice(0,200).some(r=>r.some(v=>typeof v==='string'&&/^grand total$/i.test(v.trim())));
