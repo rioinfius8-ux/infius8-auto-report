@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>INFIUS8 Auto Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+/* Layout: operations console — sticky command bar, setup panels (import → mapping → validation) above a boss-ready report sheet */
+:root{
+  color-scheme:light;
+  --bg:#EEF2F4; --surface:#FFFFFF; --sunken:#F5F8F9; --ink:#13212C; --ink-2:#4B5B68; --ink-3:#7A8894; --line:#D7DFE4;
+  --accent:#0A7480; --accent-ink:#FFFFFF; --accent-soft:#DDF0F1;
+  --good:#2C8A57; --crit:#C2453B; --warn:#B9800C; --muted:#8B98A4;
+  --bar:#13212C; --bar-ink:#E9EFF2;
+  --f-display:"Archivo","Arial Narrow",Arial,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1419; --surface:#151F26; --sunken:#111A20; --ink:#E4EBEF; --ink-2:#9FAEB9; --ink-3:#6E7E8A; --line:#24323C;
+  --accent:#3CB3BE; --accent-ink:#06171A; --accent-soft:#12343A;
+  --good:#4CC08A; --crit:#E8705F; --warn:#E3AA3E; --muted:#6F7F8B;
+  --bar:#0A1014; --bar-ink:#E4EBEF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1419; --surface:#151F26; --sunken:#111A20; --ink:#E4EBEF; --ink-2:#9FAEB9; --ink-3:#6E7E8A; --line:#24323C;
+  --accent:#3CB3BE; --accent-ink:#06171A; --accent-soft:#12343A;
+  --good:#4CC08A; --crit:#E8705F; --warn:#E3AA3E; --muted:#6F7F8B;
+  --bar:#0A1014; --bar-ink:#E4EBEF; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bar);color:var(--bar-ink)}
+.bar-in{max-width:1240px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:8px;margin-right:auto}
+.brand b{font-family:var(--f-display);font-weight:800;font-size:20px;letter-spacing:.06em}
+.brand span{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+.bar .btn{border-color:rgba(255,255,255,.18);color:var(--bar-ink);background:transparent}
+.bar .btn:hover{background:rgba(255,255,255,.08)}
+.bar .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn svg{width:15px;height:15px}
+
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:18px 48px;display:flex;flex-direction:column;gap:18px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.ph{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ph h2{font-size:17px}
+.step{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.hint{color:var(--ink-2);font-size:13px}
+.small{font-size:12px;color:var(--ink-3)}
+
+.notice{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--r);padding:10px 14px;font-size:13px}
+.notice b{font-weight:700}
+
+.import-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:16px}
+@media (max-width:860px){.import-grid{grid-template-columns:1fr}}
+.drop{border:1.5px dashed var(--ink-3);border-radius:var(--r);padding:22px 16px;text-align:center;background:var(--sunken);cursor:pointer;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;min-height:170px;transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop strong{font-family:var(--f-display);font-size:16px}
+.drop input{display:none}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:10px}
+.seg label{padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink-2)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--ink);color:var(--surface)}
+.seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:-2px}
+
+.files{display:flex;flex-direction:column;gap:10px;max-height:340px;overflow:auto}
+.file{border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.file-h{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.file-h b{font-size:13.5px;word-break:break-all}
+.sheets{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.sheet{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--ink-2)}
+.sheet input{accent-color:var(--accent)}
+.tag{font-family:var(--f-mono);font-size:10.5px;padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
+.tag.warn{color:var(--warn);border-color:var(--warn)}
+.x{border:0;background:none;color:var(--ink-3);cursor:pointer;padding:2px 6px;border-radius:4px}
+.x:hover{color:var(--crit)}
+
+details.panel>summary{list-style:none;cursor:pointer}
+details.panel>summary::-webkit-details-marker{display:none}
+details.panel>summary .chev{margin-left:auto;transition:transform .2s;color:var(--ink-3)}
+details[open].panel>summary .chev{transform:rotate(90deg)}
+.map-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:6px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:12px;font-weight:600;color:var(--ink-2)}
+.field select,.field input[type=text]{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface)}
+.field .ex{font-family:var(--f-mono);font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rules{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:13px}
+.rules label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.rules input{accent-color:var(--accent)}
+.sg-wrap{margin-top:16px}
+.sg-wrap h3{font-size:14px;margin-bottom:8px}
+.sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
+.sg-row{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:12.5px;min-width:0}
+.sg-row span.v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg-row span.c{font-family:var(--f-mono);color:var(--ink-3);font-size:11.5px}
+.sg-row select{padding:3px 4px;border:1px solid var(--line);border-radius:5px;background:var(--surface);font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+
+.vstrip{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;gap:6px;align-items:baseline;border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:12.5px;background:var(--surface)}
+.chip b{font-family:var(--f-mono);font-weight:600}
+.chip.ok b{color:var(--good)}.chip.bad b{color:var(--crit)}.chip.warn b{color:var(--warn)}
+.issues{margin-top:10px;overflow-x:auto}
+
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{text-align:left;font-weight:600;color:var(--ink-3);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:12px}
+.tbl{overflow-x:auto}
+
+/* report sheet */
+.report{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.rhead{padding:20px 22px 16px;border-bottom:1px solid var(--line);display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+.rhead .t{flex:1;min-width:240px;display:flex;flex-direction:column;gap:4px}
+.rtitle{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.015em;border:0;background:transparent;padding:0;width:100%;border-bottom:1px dashed transparent}
+.rtitle:hover,.rtitle:focus{border-bottom-color:var(--line);outline:none}
+.rmeta{color:var(--ink-2);font-size:13px}
+.filters{display:flex;gap:10px;flex-wrap:wrap}
+.filters .field{min-width:150px}
+.rbody{padding:20px 22px;display:flex;flex-direction:column;gap:22px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.kpi{padding:14px 16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi:last-child{border-right:0}
+.kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);font-weight:600}
+.kpi .v{font-family:var(--f-display);font-weight:700;font-size:28px;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12px;color:var(--ink-2)}
+.kpi.hero .v{color:var(--accent)}
+.meter{height:5px;border-radius:3px;background:var(--sunken);overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;background:var(--accent)}
+@media (max-width:640px){.kpi{border-right:0;border-bottom:1px solid var(--line)}}
+
+.charts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:22px}
+.charts .wide{grid-column:1/-1}
+@media (max-width:860px){.charts{grid-template-columns:1fr}}
+.card h3{font-size:14px;margin-bottom:2px}
+.card .small{margin-bottom:10px}
+.cbox{position:relative;width:100%}
+.statuslist{display:flex;flex-direction:column;gap:3px;margin-top:10px;font-size:12px;max-height:150px;overflow:auto}
+.statuslist div{display:flex;gap:8px;align-items:center}
+.statuslist span.v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-2)}
+.statuslist span.c{font-family:var(--f-mono)}
+
+.insights{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
+@media (max-width:860px){.insights{grid-template-columns:1fr}}
+.insights ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:68ch}
+.insights li::marker{color:var(--accent)}
+.insights .att li::marker{color:var(--crit)}
+.rate{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.rate .mb{width:70px;height:6px;background:var(--sunken);border-radius:3px;overflow:hidden}
+.rate .mb i{display:block;height:100%}
+.empty{padding:40px 20px;text-align:center;color:var(--ink-2)}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:9px 16px;border-radius:8px;font-size:13px;z-index:50;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.2)}
+.busy{opacity:.6;pointer-events:none}
+#offscreen{position:fixed;left:-10000px;top:0;width:1200px}
+
+body.present .setup{display:none}
+body.present .wrap{max-width:1400px}
+body.present .rtitle{font-size:32px}
+body.present .kpi .v{font-size:34px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="bar"><div class="bar-in">
+  <div class="brand"><b>INFIUS8</b><span>Auto Report</span></div>
+  <button class="btn" id="presentBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/></svg><span>Present</span></button>
+  <button class="btn" id="xlsxBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM4 10h16M10 4v16"/></svg>Excel</button>
+  <button class="btn primary" id="pdfBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>Download PDF</button>
+</div></div>
+
+<main class="wrap">
+  <div class="notice setup" id="sampleNote"><b>Sample data</b><span>The figures below are made-up OFSC-style records so you can see how the report works. Import your own Excel to replace them.</span></div>
+
+  <section class="panel setup" aria-labelledby="impH">
+    <div class="ph"><span class="step">Step 1</span><h2 id="impH">Import Excel</h2><span class="hint">Files are read on this device only. Nothing is uploaded.</span></div>
+    <div class="import-grid">
+      <div>
+        <label class="drop" id="drop" for="fileIn">
+          <input type="file" id="fileIn" multiple accept=".xlsx,.xls,.xlsm,.csv">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--accent)"><path d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+          <strong id="dropT">Drop Excel or CSV files here</strong>
+          <span class="small">or click to choose · .xlsx .xls .csv · one or many files</span>
+        </label>
+        <div class="seg" role="radiogroup" aria-label="Import mode">
+          <label><input type="radio" name="mode" id="modeReplace" value="replace" checked>Replace dataset</label>
+          <label><input type="radio" name="mode" id="modeAppend" value="append">Append to dataset</label>
+        </div>
+        <p class="small" style="margin:8px 0 0">Replace for a new reporting period. Append to add another area's file (e.g. Laguna after Batangas).</p>
+      </div>
+      <div>
+        <div class="ph" style="margin-bottom:8px"><h3 style="font-size:14px">Loaded files</h3><span class="small" id="filesSum"></span></div>
+        <div class="files" id="files"></div>
+        <details style="margin-top:12px"><summary class="small" style="cursor:pointer">Import history</summary><div id="history" class="tbl" style="margin-top:6px"></div></details>
+      </div>
+    </div>
+  </section>
+
+  <details class="panel setup" id="mapPanel" open>
+    <summary class="ph" style="margin:0"><span class="step">Step 2</span><h2>Column mapping &amp; rules</h2><span class="hint" id="mapHint"></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <p class="hint" style="margin:10px 0 4px">Auto-detected from your headers. Check each one; your choices are remembered for files with the same format.</p>
+    <div class="map-grid" id="mapGrid"></div>
+    <div class="rules">
+      <label><input type="checkbox" id="ruleDup" checked> Exclude duplicate IDs from totals</label>
+      <label><input type="checkbox" id="ruleCancel"> Exclude cancelled from completion rate</label>
+    </div>
+    <div class="sg-wrap"><h3>Status groups</h3><p class="small" style="margin:0 0 8px">How each status value counts in the report.</p><div class="sg" id="sg"></div></div>
+  </details>
+
+  <section class="panel setup" aria-labelledby="valH">
+    <div class="ph"><span class="step">Step 3</span><h2 id="valH">Data check</h2><span class="hint" id="valHint"></span></div>
+    <div class="vstrip" id="vstrip"></div>
+    <details id="issueDet"><summary class="small" style="cursor:pointer;margin-top:10px">Show rows with issues</summary><div class="issues" id="issues"></div></details>
+  </section>
+
+  <section class="report" id="report" aria-label="Report">
+    <div class="rhead">
+      <div class="t">
+        <span class="step">Report</span>
+        <input class="rtitle" id="rTitle" type="text" value="OFSC Operations Report" aria-label="Report title">
+        <div class="rmeta" id="rMeta"></div>
+      </div>
+      <div class="filters">
+        <div class="field"><label for="fArea">Area</label><select id="fArea"></select></div>
+        <div class="field"><label for="fMonth">Period</label><select id="fMonth"></select></div>
+        <div class="field setup"><label for="fBy">Prepared by</label><input type="text" id="fBy" placeholder="Your name"></div>
+      </div>
+    </div>
+    <div class="rbody" id="rbody">
+      <div class="kpis" id="kpis"></div>
+      <div class="charts">
+        <div class="card"><h3>Status distribution</h3><div class="small" id="cs1"></div><div class="cbox" style="height:240px"><canvas id="chStatus"></canvas></div><div class="statuslist" id="statusList"></div></div>
+        <div class="card"><h3>Activities by area</h3><div class="small">Stacked by status group</div><div class="cbox" id="areaBox"><canvas id="chArea"></canvas></div></div>
+        <div class="card wide"><h3>Trend</h3><div class="small" id="cs3"></div><div class="cbox" style="height:260px"><canvas id="chTrend"></canvas></div></div>
+      </div>
+      <div class="insights">
+        <div><h3 style="font-size:15px">Key findings</h3><ul id="findings"></ul></div>
+        <div class="att"><h3 style="font-size:15px">Needs attention</h3><ul id="attention"></ul></div>
+      </div>
+      <div class="charts">
+        <div class="card"><h3>Area summary</h3><div class="small">Completion rate per area</div><div class="tbl" id="areaTbl"></div></div>
+        <div class="card"><h3>Activity types</h3><div class="small">Top 10 by volume</div><div class="cbox" id="typeBox"><canvas id="chType"></canvas></div></div>
+        <div class="card wide"><h3>Resources</h3><div class="small" id="resSub">Top 15 by volume</div><div class="tbl" id="resTbl"></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+<div id="offscreen" aria-hidden="true"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(n,d=0)=>n==null||!isFinite(n)?'—':Number(n).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:0});
+const pct=(a,b)=>b?a/b*100:0;
+const fp=v=>fmt(v,1)+'%';
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const dKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const mKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+const mLabel=k=>{const[y,m]=k.split('-');return MON[+m-1]+' '+y};
+const dLabel=d=>`${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+const ls={get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
+
+const GROUPS=['Completed','Not completed','Cancelled','Other'];
+const GCOL={'Completed':'good','Not completed':'crit','Cancelled':'muted','Other':'warn'};
+const ROLES=[
+ {key:'id',label:'Record ID',kw:[/activity\s*id/,/\bid\b/,/ticket/,/work\s*order/,/\bw\.?o\b/,/appt/,/number|\bno\b/]},
+ {key:'status',label:'Status',kw:[/activity\s*status/,/status/,/\bstate\b/]},
+ {key:'area',label:'Area',kw:[/\barea\b/,/bucket/,/region/,/province/,/cluster/,/location/,/city/,/zone/,/branch/]},
+ {key:'resource',label:'Resource / technician',kw:[/resource/,/technician/,/\btech/,/crew/,/installer/,/assigned/]},
+ {key:'type',label:'Activity type',kw:[/activity\s*type/,/job\s*type/,/work\s*type/,/\btype\b/,/category/,/service/]},
+ {key:'date',label:'Date',kw:[/\bdate\b/,/date/,/start/,/created/,/completed/,/\bday\b/,/time/]},
+ {key:'value',label:'Measure (number)',kw:[/duration/,/amount/,/cost/,/hours?\b/,/minutes?/,/travel/,/qty|quantity/,/total/]}
+];
+
+const state={files:[],map:{},sg:{},rules:{dup:true,cancel:false},sample:true,filters:{area:'all',month:'all'},recs:[],val:null,prof:{},headers:[],sig:''};
+let charts={};
+
+/* ---------- parsing ---------- */
+function mk(y,m,d){if(m<1||m>12||d<1||d>31)return null;const x=new Date(y,m-1,d);return x.getMonth()===m-1?x:null}
+function toDate(v,serial){
+  if(v==null||v==='')return null;
+  if(v instanceof Date)return isNaN(v)?null:new Date(v.getFullYear(),v.getMonth(),v.getDate());
+  if(typeof v==='number'){if(serial&&v>20000&&v<80000){const d=new Date(Math.round((v-25569)*864e5));return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())}return null}
+  const s=String(v).trim();let m;
+  if((m=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/)))return mk(+m[1],+m[2],+m[3]);
+  if((m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})\b/))){let y=+m[3];if(y<100)y+=2000;let mo=+m[1],d=+m[2];if(mo>12&&d<=12)[mo,d]=[d,mo];return mk(y,mo,d)}
+  if(/[a-z]{3}/i.test(s)&&/\d{1,2}/.test(s)&&/\d{4}/.test(s)){const t=Date.parse(s);if(!isNaN(t)){const d=new Date(t);return new Date(d.getFullYear(),d.getMonth(),d.getDate())}}
+  return null;
+}
+function toNum(v){if(typeof v==='number')return isFinite(v)?v:null;if(v==null)return null;const s=String(v).replace(/[,\s₱$]/g,'');if(s===''||!/^-?\d*\.?\d+(e[-+]?\d+)?$/i.test(s))return null;return Number(s)}
+const blank=v=>v==null||String(v).trim()==='';
+
+function makeSheet(name,aoa,rowOff){
+  let hi=0,best=-1;
+  for(let i=0;i<Math.min(25,aoa.length);i++){const r=aoa[i]||[];let s=0;for(const c of r){if(typeof c==='string'&&c.trim()&&isNaN(Number(c)))s++}if(s>best){best=s;hi=i}}
+  const raw=aoa[hi]||[];const headers=[];const seen={};
+  const rows=[],rowNums=[];
+  for(let i=hi+1;i<aoa.length;i++){const r=aoa[i];if(!r||!r.some(v=>!blank(v)))continue;rows.push(r);rowNums.push(i+1+rowOff)}
+  const len=rows.reduce((m,r)=>Math.max(m,r.length),raw.length);
+  for(let i=0;i<len;i++){const h=raw[i];let n=blank(h)?`Column ${i+1}`:String(h).trim().replace(/\s+/g,' ');if(seen[n]){seen[n]++;n=`${n} (${seen[n]})`}else seen[n]=1;headers[i]=n}
+  const pivot=/pivot|summary|summ\b/i.test(name)||headers.some(h=>/^(row labels|grand total|sum of|count of)/i.test(h))||rows.slice(0,200).some(r=>r.some(v=>typeof v==='string'&&/^grand total$/i.test(v.trim())));
+  return {name,headers,rows,rowNums,headerRow:hi+1+rowOff,pivot,include:!pivot&&rows.length>0&&headers.length>=2};
+}
+async function parseFile(file){
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:'array',cellDates:true});
+  const sheets=wb.SheetNames.map(n=>{const ws=wb.Sheets[n];if(!ws||!ws['!ref'])return makeSheet(n,[],0);
+    const off=XLSX.utils.decode_range(ws['!ref']).s.r;
+    const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:true});
+    return makeSheet(n,aoa,off)});
+  return {name:file.name,size:file.size,lm:file.lastModified,sheets};
+}
+
+/* ---------- profiling & mapping ---------- */
+function incSheets(){const out=[];state.files.forEach(f=>f.sheets.forEach(s=>{if(s.include)out.push({f,s})}));return out}
+function unionHeaders(){const set=new Set();incSheets().forEach(({s})=>s.headers.forEach(h=>set.add(h)));return [...set]}
+function profile(){
+  const heads=unionHeaders();const prof={};
+  heads.forEach(h=>{
+    const vals=[];
+    for(const {s} of incSheets()){const i=s.headers.indexOf(h);if(i<0)continue;for(const r of s.rows){vals.push(r[i]);if(vals.length>=3000)break}if(vals.length>=3000)break}
+    const ne=vals.filter(v=>!blank(v));const n=ne.length;
+    const serial=/date|time|day|created|start|complet/i.test(h);
+    let dates=0,nums=0;const uniq=new Set();
+    ne.forEach(v=>{if(toDate(v,serial))dates++;if(toNum(v)!=null)nums++;uniq.add(String(v).trim().toLowerCase())});
+    const p={n,fill:vals.length?n/vals.length:0,uniq:n?uniq.size/n:0,card:uniq.size,ex:ne.slice(0,3).map(v=>v instanceof Date?dKey(v):String(v)).join(' · ')};
+    p.type=!n?'empty':dates/n>.7?'date':(nums/n>.85?(p.uniq>.95&&n>20&&ne.every(v=>Number.isInteger(toNum(v)))?'id':'num'):(p.uniq>.9&&n>20?'id':(uniq.size<=Math.max(60,n*.3)?'cat':'text')));
+    prof[h]=p;
+  });
+  state.prof=prof;state.headers=heads;
+  state.sig=heads.slice(0,80).join('|').toLowerCase();
+}
+function autoMap(){
+  const c=[];
+  state.headers.forEach(h=>{const p=state.prof[h];if(!p||!p.n)return;const l=h.toLowerCase();
+    ROLES.forEach(r=>{let k=r.kw.findIndex(rx=>rx.test(l));if(k<0)return;let s=12-k;const t=p.type;
+      if(r.key==='date')s+=t==='date'?6:-20;
+      else if(r.key==='value')s+=t==='num'?6:-20;
+      else if(r.key==='id')s+=(t==='id'||p.uniq>.9)?6:-8;
+      else s+=t==='cat'?5:(t==='text'?-2:-12);
+      s+=p.fill*3;c.push({role:r.key,h,s})})});
+  c.sort((a,b)=>b.s-a.s);
+  const map={},used=new Set();
+  for(const x of c){if(map[x.role]||used.has(x.h)||x.s<8)continue;map[x.role]=x.h;used.add(x.h)}
+  if(!map.area&&state.files.length>1)map.area='__file';
+  state.map=map;
+}
+function classify(v){const s=String(v||'').toLowerCase().trim();
+  if(!s)return 'Other';
+  if(/cancel|void/.test(s))return 'Cancelled';
+  if(/not\s*done|not\s*complet|incomplete|fail|unsuccess|reject/.test(s))return 'Not completed';
+  if(/complet|\bdone\b|closed|resolved|finish|success|validated|accomplish/.test(s))return 'Completed';
+  if(/pend|start|suspend|open|ongoing|progress|en\s?route|assigned|hold|resched|deferred|not\s*started/.test(s))return 'Not completed';
+  return 'Other'}
+function formats(){return ls.get('i8ar.formats',{})}
+function saveFormat(){if(state.sample)return;const f=formats();f[state.sig]={map:state.map,sg:state.sg,rules:state.rules};ls.set('i8ar.formats',f)}
+
+/* ---------- records & validation ---------- */
+function build(){
+  const m=state.map,recs=[];const seen=new Map();
+  const v={read:0,dup:0,noId:0,noStatus:0,noDate:0,badDate:0,noArea:0,badNum:0,samples:[]};
+  const serial=true;
+  for(const {f,s} of incSheets()){
+    const ix=k=>m[k]&&!m[k].startsWith('__')?s.headers.indexOf(m[k]):-1;
+    const I={id:ix('id'),status:ix('status'),area:ix('area'),resource:ix('resource'),type:ix('type'),date:ix('date'),value:ix('value')};
+    const fileBase=f.name.replace(/\.[^.]+$/,'');
+    s.rows.forEach((r,ri)=>{
+      v.read++;const iss=[];
+      const g=k=>I[k]>=0?r[I[k]]:null;
+      const id=blank(g('id'))?'':String(g('id')).trim();
+      const stRaw=blank(g('status'))?'':String(g('status')).trim();
+      let area=m.area==='__file'?fileBase:m.area==='__sheet'?s.name:(blank(g('area'))?'':String(g('area')).trim());
+      const dRaw=g('date');const date=m.date?toDate(dRaw,serial):null;
+      const vRaw=g('value');const val=m.value?toNum(vRaw):null;
+      if(m.id&&!id){v.noId++;iss.push('Missing ID')}
+      if(m.status&&!stRaw){v.noStatus++;iss.push('Missing status')}
+      if(m.date){if(blank(dRaw)){v.noDate++;iss.push('Missing date')}else if(!date){v.badDate++;iss.push('Invalid date')}}
+      if(m.area&&!area){v.noArea++;iss.push('Missing area')}
+      if(m.value&&!blank(vRaw)&&val==null){v.badNum++;iss.push('Not a number')}
+      let dup=false;
+      if(m.id&&id){const k=id.toLowerCase();if(seen.has(k)){dup=true;v.dup++;iss.push('Duplicate ID')}else seen.set(k,1)}
+      const status=stRaw||'(Blank)';
+      const rec={src:`${f.name} › ${s.name}`,row:s.rowNums[ri],id,status,group:state.sg[status]||classify(stRaw),area:area||'(Blank)',
+        resource:blank(g('resource'))?'(Blank)':String(g('resource')).trim(),type:blank(g('type'))?'(Blank)':String(g('type')).trim(),date,val,dup,iss};
+      recs.push(rec);
+      if(iss.length&&v.samples.length<200)v.samples.push(rec);
+    });
+  }
+  state.recs=recs;state.val=v;
+}
+function statusValues(){const c=new Map();state.recs.forEach(r=>c.set(r.status,(c.get(r.status)||0)+1));return [...c].sort((a,b)=>b[1]-a[1])}
+
+/* ---------- compute ---------- */
+function filtered(){const {area,month}=state.filters;return state.recs.filter(r=>(!state.rules.dup||!r.dup)&&(area==='all'||r.area===area)&&(month==='all'||(r.date&&mKey(r.date)===month)))}
+function compute(rs){
+  const st={total:rs.length,groups:{},byArea:new Map(),byType:new Map(),byRes:new Map(),byStatus:new Map(),dates:[],valSum:0,valN:0};
+  GROUPS.forEach(g=>st.groups[g]=0);
+  const bump=(map,k,g)=>{let o=map.get(k);if(!o){o={total:0};GROUPS.forEach(x=>o[x]=0);map.set(k,o)}o.total++;o[g]++};
+  rs.forEach(r=>{st.groups[r.group]++;bump(st.byArea,r.area,r.group);bump(st.byType,r.type,r.group);bump(st.byRes,r.resource,r.group);
+    st.byStatus.set(r.status,{n:(st.byStatus.get(r.status)?.n||0)+1,g:r.group});
+    if(r.date)st.dates.push(r.date);if(r.val!=null){st.valSum+=r.val;st.valN++}});
+  st.base=state.rules.cancel?st.total-st.groups['Cancelled']:st.total;
+  st.rate=pct(st.groups['Completed'],st.base);
+  const rateOf=o=>pct(o.Completed,state.rules.cancel?o.total-o.Cancelled:o.total);
+  st.rateOf=rateOf;
+  if(st.dates.length){let mn=st.dates[0],mx=st.dates[0];st.dates.forEach(d=>{if(d<mn)mn=d;if(d>mx)mx=d});st.min=mn;st.max=mx}
+  // trend
+  st.trend=null;
+  if(st.dates.length){
+    const span=(st.max-st.min)/864e5;const gran=span<=45?'day':span<=200?'week':'month';
+    const key=d=>{if(gran==='day')return dKey(d);if(gran==='month')return mKey(d);const x=new Date(d);const wd=(x.getDay()+6)%7;x.setDate(x.getDate()-wd);return dKey(x)};
+    const tm=new Map();rs.forEach(r=>{if(!r.date)return;const k=key(r.date);const o=tm.get(k)||{t:0,c:0};o.t++;if(r.group==='Completed')o.c++;tm.set(k,o)});
+    const keys=[...tm.keys()].sort();
+    const lab=k=>{if(gran==='month')return mLabel(k);const[y,m,d]=k.split('-');return (gran==='week'?'Wk ':'')+MON[+m-1]+' '+(+d)};
+    st.trend={gran,keys,labels:keys.map(lab),total:keys.map(k=>tm.get(k).t),done:keys.map(k=>tm.get(k).c)};
+  }
+  return st;
+}
+
+/* ---------- insights ---------- */
+function insights(st){
+  const F=[],A=[];const v=state.val;
+  if(!st.total){return {F:['No records match the current filters.'],A:[]}}
+  const areas=[...st.byArea].filter(([k])=>k!=='(Blank)');
+  const period=st.min?` from <b>${dLabel(st.min)}</b> to <b>${dLabel(st.max)}</b>`:'';
+  F.push(`<b>${fmt(st.total)}</b> activities${period}${areas.length>1?` across <b>${areas.length}</b> areas`:''}.`);
+  F.push(`Completion rate is <b>${fp(st.rate)}</b>: ${fmt(st.groups.Completed)} completed, ${fmt(st.groups['Not completed'])} not completed, ${fmt(st.groups.Cancelled)} cancelled.`);
+  const minN=Math.max(5,st.total*.02);
+  const ranked=areas.filter(([,o])=>o.total>=minN).map(([k,o])=>({k,o,r:st.rateOf(o)})).sort((a,b)=>b.r-a.r);
+  if(ranked.length>1){const b=ranked[0],w=ranked[ranked.length-1];
+    F.push(`Best completion: <b>${esc(b.k)}</b> at ${fp(b.r)} (${fmt(b.o.total)} activities).`);
+    if(b.r-w.r>=3)A.push(`<b>${esc(w.k)}</b> has the lowest completion rate at ${fp(w.r)}, ${fmt(b.r-w.r,1)} points below ${esc(b.k)}. Review its not-done reasons.`)}
+  const biggest=areas.sort((a,b)=>b[1].total-a[1].total)[0];
+  if(biggest&&areas.length>1)F.push(`<b>${esc(biggest[0])}</b> carries the most volume: ${fmt(biggest[1].total)} activities (${fp(pct(biggest[1].total,st.total))} of total).`);
+  const types=[...st.byType].filter(([k])=>k!=='(Blank)').sort((a,b)=>b[1].total-a[1].total);
+  if(types.length)F.push(`Top activity type is <b>${esc(types[0][0])}</b> with ${fmt(types[0][1].total)} (${fp(pct(types[0][1].total,st.total))}).`);
+  if(st.trend&&st.trend.keys.length>1){const t=st.trend;let mi=0;t.total.forEach((x,i)=>{if(x>t.total[mi])mi=i});
+    const unit=t.gran==='day'?'day':t.gran==='week'?'week':'month';
+    F.push(`Busiest ${unit}: <b>${t.labels[mi]}</b> with ${fmt(t.total[mi])} activities.`);
+    if(t.gran!=='day'&&t.keys.length>=2){const a=t.total[t.total.length-2],b=t.total[t.total.length-1];
+      if(a)F.push(`Latest ${unit} (${t.labels[t.labels.length-1]}) volume is ${fmt(b)}, ${b>=a?'up':'down'} ${fp(Math.abs(pct(b-a,a)))} from the ${unit} before${unit!=='day'?' (latest period may still be in progress)':''}.`)}}
+  if(state.map.value&&st.valN)F.push(`${esc(state.map.value)}: total <b>${fmt(st.valSum,1)}</b>, average <b>${fmt(st.valSum/st.valN,1)}</b> per activity.`);
+  const res=[...st.byRes].filter(([k,o])=>k!=='(Blank)'&&o.total>=10).map(([k,o])=>({k,o,r:st.rateOf(o)})).sort((a,b)=>a.r-b.r);
+  if(res.length>=4){const low=res.slice(0,3).filter(x=>x.r<st.rate-5);if(low.length)A.push(`Lowest-completing resources (10+ activities): ${low.map(x=>`<b>${esc(x.k)}</b> ${fp(x.r)}`).join(', ')}.`)}
+  if(st.groups['Not completed'])A.push(`<b>${fmt(st.groups['Not completed'])}</b> activities are not completed (${fp(pct(st.groups['Not completed'],st.total))}). Follow up for rescheduling or validation.`);
+  if(st.groups.Other)A.push(`${fmt(st.groups.Other)} records have a status the report could not group. Set them under Status groups.`);
+  if(v.dup)A.push(`${fmt(v.dup)} duplicate IDs found in the source${state.rules.dup?' and excluded from totals':''}.`);
+  const miss=v.noStatus+v.badDate+v.noDate+v.noArea;
+  if(miss)A.push(`${fmt(miss)} data gaps in the source (missing status, area or date, or invalid dates). Clean these in the Excel before the final report.`);
+  if(!A.length)A.push('No major issues found in this dataset.');
+  return {F,A};
+}
+
+/* ---------- render: setup ---------- */
+function renderFiles(){
+  const el=$('#files');
+  if(!state.files.length){el.innerHTML='<div class="small">No files yet.</div>';$('#filesSum').textContent='';return}
+  el.innerHTML=state.files.map((f,fi)=>`<div class="file"><div class="file-h"><b>${esc(f.name)}</b>${f.sample?'<span class="tag">sample</span>':`<button class="x" data-rm="${fi}" aria-label="Remove ${esc(f.name)}" type="button">✕</button>`}</div>
+    <div class="sheets">${f.sheets.map((s,si)=>`<label class="sheet"><input type="checkbox" data-f="${fi}" data-s="${si}" ${s.include?'checked':''} ${s.rows.length?'':'disabled'}>
+    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}</span>
+    <span class="num small">${fmt(s.rows.length)} rows · ${fmt(s.headers.length)} cols</span>${s.pivot?'<span class="tag warn" title="Looks like a pivot/summary. Raw rows are used instead.">pivot</span>':''}</label>`).join('')}</div></div>`).join('');
+  const inc=incSheets();$('#filesSum').textContent=`${state.files.length} file${state.files.length>1?'s':''} · ${inc.length} sheet${inc.length!==1?'s':''} used`;
+}
+function renderHistory(){
+  const h=ls.get('i8ar.history',[]);
+  $('#history').innerHTML=h.length?`<table><thead><tr><th>When</th><th>File</th><th>Mode</th><th class="n">Rows</th></tr></thead><tbody>${h.map(x=>`<tr><td class="small">${esc(x.at)}</td><td>${esc(x.name)}</td><td>${esc(x.mode)}</td><td class="n">${fmt(x.rows)}</td></tr>`).join('')}</tbody></table><button class="btn" id="clrHist" type="button" style="margin-top:8px">Clear history</button>`:'<div class="small">No imports yet on this device.</div>';
+  const b=$('#clrHist');if(b)b.onclick=()=>{ls.set('i8ar.history',[]);renderHistory()};
+}
+function renderMap(){
+  const opts=(role,cur)=>{let o=`<option value="">— Not used —</option>`;
+    if(role==='area')o+=`<option value="__file" ${cur==='__file'?'selected':''}>(Use file name)</option><option value="__sheet" ${cur==='__sheet'?'selected':''}>(Use sheet name)</option>`;
+    o+=state.headers.filter(h=>state.prof[h]?.n).map(h=>`<option ${h===cur?'selected':''} value="${esc(h)}">${esc(h)} · ${state.prof[h].type}</option>`).join('');return o};
+  $('#mapGrid').innerHTML=ROLES.map(r=>{const cur=state.map[r.key]||'';const p=state.prof[cur];
+    return `<div class="field"><label for="m_${r.key}">${r.label}</label><select id="m_${r.key}" data-role="${r.key}">${opts(r.key,cur)}</select><div class="ex">${p?esc(p.ex):cur.startsWith('__')?'Area comes from the '+(cur==='__file'?'file':'sheet')+' name':'&nbsp;'}</div></div>`}).join('');
+  const mapped=ROLES.filter(r=>state.map[r.key]).length;
+  $('#mapHint').textContent=`${mapped} of ${ROLES.length} fields mapped · ${fmt(state.headers.length)} columns found`;
+  $('#ruleDup').checked=state.rules.dup;$('#ruleCancel').checked=state.rules.cancel;
+  const sv=statusValues().slice(0,60);
+  $('#sg').innerHTML=state.map.status?sv.map(([v,n],i)=>{const g=state.sg[v]||classify(v==='(Blank)'?'':v);
+    return `<div class="sg-row"><span class="dot" style="background:var(--${GCOL[g]})"></span><span class="v" title="${esc(v)}">${esc(v)}</span><span class="c">${fmt(n)}</span><select data-sv="${i}" aria-label="Group for ${esc(v)}">${GROUPS.map(x=>`<option ${x===g?'selected':''}>${x}</option>`).join('')}</select></div>`}).join(''):'<div class="small">Map a Status column first.</div>';
+  $('#sg').dataset.vals=JSON.stringify(sv.map(x=>x[0]));
+}
+function renderVal(){
+  const v=state.val;const used=state.rules.dup?v.read-v.dup:v.read;
+  const bad=state.recs.filter(r=>r.iss.length).length;const q=pct(v.read-bad,v.read);
+  const c=(cls,label,n)=>`<span class="chip ${cls}">${label} <b class="num">${n}</b></span>`;
+  $('#vstrip').innerHTML=[c('','Rows read',fmt(v.read)),c('ok','Used in report',fmt(used)),c(q>=95?'ok':q>=80?'warn':'bad','Clean rows',fp(q)),
+    state.map.id?c(v.dup?'warn':'ok','Duplicate IDs',fmt(v.dup)):'',state.map.id?c(v.noId?'warn':'ok','Missing ID',fmt(v.noId)):'',
+    state.map.status?c(v.noStatus?'bad':'ok','Missing status',fmt(v.noStatus)):'',state.map.date?c(v.noDate+v.badDate?'warn':'ok','Missing / invalid date',fmt(v.noDate+v.badDate)):'',
+    state.map.area?c(v.noArea?'warn':'ok','Missing area',fmt(v.noArea)):'',state.map.value?c(v.badNum?'warn':'ok','Non-numeric measure',fmt(v.badNum)):''].join('');
+  $('#valHint').textContent=bad?`${fmt(bad)} rows have at least one issue. They stay in the data and are flagged.`:'No issues found.';
+  $('#issues').innerHTML=v.samples.length?`<table><thead><tr><th>Source</th><th class="n">Row</th><th>ID</th><th>Status</th><th>Issue</th></tr></thead><tbody>${v.samples.slice(0,60).map(r=>`<tr><td class="small">${esc(r.src)}</td><td class="n">${r.row}</td><td>${esc(r.id)||'—'}</td><td>${esc(r.status)}</td><td style="color:var(--crit)">${esc(r.iss.join(', '))}</td></tr>`).join('')}</tbody></table>${v.samples.length>60?'<div class="small" style="margin-top:6px">Showing first 60. Export Excel for the full list.</div>':''}`:'<div class="small">Nothing to show.</div>';
+}
+function renderFilters(){
+  const areas=[...new Set(state.recs.map(r=>r.area))].sort();
+  const months=[...new Set(state.recs.filter(r=>r.date).map(r=>mKey(r.date)))].sort();
+  if(state.filters.area!=='all'&&!areas.includes(state.filters.area))state.filters.area='all';
+  if(state.filters.month!=='all'&&!months.includes(state.filters.month))state.filters.month='all';
+  $('#fArea').innerHTML=`<option value="all">All areas</option>`+areas.map(a=>`<option ${a===state.filters.area?'selected':''} value="${esc(a)}">${esc(a)}</option>`).join('');
+  $('#fMonth').innerHTML=`<option value="all">All months</option>`+months.map(m=>`<option ${m===state.filters.month?'selected':''} value="${m}">${mLabel(m)}</option>`).join('');
+}
+
+/* ---------- charts ---------- */
+function tok(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function pal(){return {fg:tok('--ink'),fg2:tok('--ink-2'),grid:tok('--line'),accent:tok('--accent'),good:tok('--good'),crit:tok('--crit'),warn:tok('--warn'),muted:tok('--muted'),surface:tok('--surface')}}
+const LIGHT={fg:'#13212C',fg2:'#4B5B68',grid:'#D7DFE4',accent:'#0A7480',good:'#2C8A57',crit:'#C2453B',warn:'#B9800C',muted:'#8B98A4',surface:'#FFFFFF'};
+function alpha(hex,a){const h=hex.replace('#','');const n=parseInt(h.length===3?h.split('').map(c=>c+c).join(''):h,16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
+function scales(P,stacked,horiz){const ax={grid:{color:P.grid,drawTicks:false},border:{display:false},ticks:{color:P.fg2,padding:6},stacked};
+  return horiz?{x:{...ax,beginAtZero:true},y:{...ax,grid:{display:false}}}:{x:{...ax,grid:{display:false}},y:{...ax,beginAtZero:true}}}
+function cfgs(st,P,font){
+  const base={responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{labels:{color:P.fg2,boxWidth:10,boxHeight:10,font}},tooltip:{titleFont:font,bodyFont:font}}};
+  const areas=[...st.byArea].sort((a,b)=>b[1].total-a[1].total).slice(0,14);
+  const types=[...st.byType].sort((a,b)=>b[1].total-a[1].total).slice(0,10);
+  const usedG=GROUPS.filter(g=>st.groups[g]);
+  const out={
+    status:{type:'doughnut',data:{labels:usedG,datasets:[{data:usedG.map(g=>st.groups[g]),backgroundColor:usedG.map(g=>P[GCOL[g]]),borderColor:P.surface,borderWidth:2}]},
+      options:{...base,cutout:'64%',plugins:{...base.plugins,legend:{position:'right',labels:{...base.plugins.legend.labels,generateLabels:ch=>usedG.map((g,i)=>({text:`${g}  ${fmt(st.groups[g])} (${fmt(pct(st.groups[g],st.total),1)}%)`,fillStyle:P[GCOL[g]],strokeStyle:P[GCOL[g]],fontColor:P.fg2,index:i}))}}}}},
+    area:{type:'bar',data:{labels:areas.map(a=>a[0]),datasets:usedG.map(g=>({label:g,data:areas.map(a=>a[1][g]),backgroundColor:P[GCOL[g]],borderRadius:2,barThickness:'flex',maxBarThickness:22}))},
+      options:{...base,indexAxis:'y',scales:scales(P,true,true),plugins:{...base.plugins,legend:{position:'bottom',labels:base.plugins.legend.labels}}}},
+    type:{type:'bar',data:{labels:types.map(t=>t[0]),datasets:[{label:'Activities',data:types.map(t=>t[1].total),backgroundColor:P.accent,borderRadius:2,maxBarThickness:20}]},
+      options:{...base,indexAxis:'y',scales:scales(P,false,true),plugins:{...base.plugins,legend:{display:false}}}},
+    areaH:Math.max(200,areas.length*30+70),typeH:Math.max(180,types.length*28+40)
+  };
+  if(st.trend)out.trend={type:'line',data:{labels:st.trend.labels,datasets:[
+    {label:'All activities',data:st.trend.total,borderColor:P.accent,backgroundColor:alpha(P.accent,.12),fill:true,tension:.3,pointRadius:st.trend.keys.length>40?0:3,pointBackgroundColor:P.accent,borderWidth:2},
+    {label:'Completed',data:st.trend.done,borderColor:P.good,backgroundColor:'transparent',tension:.3,pointRadius:st.trend.keys.length>40?0:3,pointBackgroundColor:P.good,borderWidth:2}]},
+    options:{...base,interaction:{mode:'index',intersect:false},scales:scales(P,false,false),plugins:{...base.plugins,legend:{position:'top',align:'end',labels:base.plugins.legend.labels}}}};
+  return out;
+}
+function drawCharts(st){
+  Object.values(charts).forEach(c=>c.destroy());charts={};
+  if(!window.Chart)return;
+  Chart.defaults.font.family=getComputedStyle(document.body).fontFamily;
+  const c=cfgs(st,pal(),{size:12});
+  $('#areaBox').style.height=c.areaH+'px';$('#typeBox').style.height=c.typeH+'px';
+  charts.status=new Chart($('#chStatus'),c.status);
+  charts.area=new Chart($('#chArea'),c.area);
+  charts.type=new Chart($('#chType'),c.type);
+  if(c.trend)charts.trend=new Chart($('#chTrend'),c.trend);
+}
+
+/* ---------- render: report ---------- */
+let current=null;
+function renderReport(){
+  const rs=filtered();const st=compute(rs);current=st;
+  const f=state.filters;
+  const per=st.min?`${dLabel(st.min)} – ${dLabel(st.max)}`:'No dates mapped';
+  $('#rMeta').textContent=`${per} · ${f.area==='all'?'All areas':f.area}${f.month!=='all'?' · '+mLabel(f.month):''}`;
+  if(!st.total){$('#kpis').innerHTML=`<div class="empty" style="grid-column:1/-1">No records to show. Import a file or change the filters.</div>`}
+  else{
+    const k=(l,v,s,cls='')=>`<div class="kpi ${cls}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></div>`;
+    $('#kpis').innerHTML=[
+      k('Total activities',fmt(st.total),state.rules.dup&&state.val.dup?`${fmt(state.val.dup)} duplicates excluded`:'all records in view'),
+      `<div class="kpi hero"><span class="l">Completion rate</span><span class="v">${fp(st.rate)}</span><div class="meter"><i style="width:${Math.min(100,st.rate)}%"></i></div><span class="s">${state.rules.cancel?'excl. cancelled':'of all activities'}</span></div>`,
+      k('Completed',fmt(st.groups.Completed),fp(pct(st.groups.Completed,st.total))+' of total'),
+      k('Not completed',fmt(st.groups['Not completed']),fp(pct(st.groups['Not completed'],st.total))+' of total'),
+      k('Cancelled',fmt(st.groups.Cancelled),fp(pct(st.groups.Cancelled,st.total))+' of total'),
+      state.map.value&&st.valN?k(esc(state.map.value),fmt(st.valSum/st.valN,1),`average · total ${fmt(st.valSum,0)}`):''
+    ].join('');
+  }
+  $('#cs1').textContent=`${fmt(st.byStatus.size)} distinct status values`;
+  $('#statusList').innerHTML=[...st.byStatus].sort((a,b)=>b[1].n-a[1].n).map(([v,o])=>`<div><span class="dot" style="background:var(--${GCOL[o.g]})"></span><span class="v">${esc(v)}</span><span class="c">${fmt(o.n)}</span></div>`).join('');
+  $('#cs3').textContent=st.trend?`Activities per ${st.trend.gran} · all vs completed`:'Map a Date column to see the trend';
+  const {F,A}=insights(st);current.ins={F,A};
+  $('#findings').innerHTML=F.map(x=>`<li>${x}</li>`).join('');
+  $('#attention').innerHTML=A.map(x=>`<li>${x}</li>`).join('');
+  const rateCell=r=>{const col=r>=90?'var(--good)':r>=75?'var(--warn)':'var(--crit)';return `<div class="rate"><span class="num">${fp(r)}</span><span class="mb"><i style="width:${Math.min(100,r)}%;background:${col}"></i></span></div>`};
+  const areas=[...st.byArea].sort((a,b)=>b[1].total-a[1].total);
+  $('#areaTbl').innerHTML=`<table><thead><tr><th>Area</th><th class="n">Total</th><th class="n">Done</th><th class="n">Not done</th><th class="n">Cancel</th><th class="n">Rate</th></tr></thead><tbody>${areas.map(([k,o])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(o.total)}</td><td class="n">${fmt(o.Completed)}</td><td class="n">${fmt(o['Not completed'])}</td><td class="n">${fmt(o.Cancelled)}</td><td class="n">${rateCell(st.rateOf(o))}</td></tr>`).join('')}</tbody></table>`;
+  const res=[...st.byRes].sort((a,b)=>b[1].total-a[1].total);
+  $('#resSub').textContent=state.map.resource?`Top ${Math.min(15,res.length)} of ${fmt(res.length)} by volume`:'Map a Resource column to see this table';
+  $('#resTbl').innerHTML=state.map.resource?`<table><thead><tr><th>Resource</th><th class="n">Total</th><th class="n">Completed</th><th class="n">Not completed</th><th class="n">Cancelled</th><th class="n">Rate</th></tr></thead><tbody>${res.slice(0,15).map(([k,o])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(o.total)}</td><td class="n">${fmt(o.Completed)}</td><td class="n">${fmt(o['Not completed'])}</td><td class="n">${fmt(o.Cancelled)}</td><td class="n">${rateCell(st.rateOf(o))}</td></tr>`).join('')}</tbody></table>`:'';
+  drawCharts(st);
+}
+function renderAll(){
+  $('#sampleNote').hidden=!state.sample;
+  renderFiles();renderMap();renderVal();renderFilters();renderReport();
+}
+function rebuild(){build();renderAll()}
+
+/* ---------- import ---------- */
+async function importFiles(list){
+  const files=[...list].filter(f=>/\.(xlsx|xls|xlsm|csv)$/i.test(f.name));
+  if(!files.length){toast('Choose .xlsx, .xls or .csv files.');return}
+  if(!window.XLSX){toast('The Excel reader did not load. Check your connection and reload.');return}
+  const mode=state.sample?'replace':document.querySelector('input[name=mode]:checked').value;
+  const drop=$('#drop');drop.classList.add('busy');$('#dropT').textContent='Reading…';
+  const parsed=[];
+  for(const f of files){
+    if(mode==='append'&&state.files.some(x=>x.name===f.name&&x.size===f.size&&x.lm===f.lastModified)){toast(`${f.name} is already loaded. Skipped.`);continue}
+    try{parsed.push(await parseFile(f))}catch(e){toast(`Could not read ${f.name}. Is it a valid Excel file?`)}
+  }
+  drop.classList.remove('busy');$('#dropT').textContent='Drop Excel or CSV files here';
+  if(!parsed.length)return;
+  if(mode==='replace'||state.sample){state.files=[];state.sample=false}
+  state.files.push(...parsed);
+  const hist=ls.get('i8ar.history',[]);const now=new Date();
+  parsed.forEach(p=>hist.unshift({at:`${dLabel(now)} ${now.toTimeString().slice(0,5)}`,name:p.name,mode,rows:p.sheets.filter(s=>s.include).reduce((a,s)=>a+s.rows.length,0)}));
+  ls.set('i8ar.history',hist.slice(0,30));
+  afterLoad(true);
+  renderHistory();
+  const n=state.recs.length;toast(`Imported ${parsed.length} file${parsed.length>1?'s':''} · ${fmt(n)} rows`);
+}
+function afterLoad(tryFormat){
+  profile();
+  const saved=tryFormat&&formats()[state.sig];
+  if(saved){state.map=Object.fromEntries(Object.entries(saved.map).filter(([,h])=>h.startsWith('__')||state.headers.includes(h)));state.sg=saved.sg||{};state.rules=saved.rules||state.rules;toast('Saved mapping for this format applied.')}
+  else{autoMap();state.sg={}}
+  state.filters={area:'all',month:'all'};
+  rebuild();
+}
+
+/* ---------- sample ---------- */
+function sample(){
+  let s=20261011;const rnd=()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+  const pick=(arr,w)=>{let x=rnd()*w.reduce((a,b)=>a+b,0);for(let i=0;i<arr.length;i++){x-=w[i];if(x<0)return arr[i]}return arr[arr.length-1]};
+  const areas=[['Batangas','BTG',1.2,.9],['Laguna','LAG',1.4,.93],['MPX Subcon','MPX',.9,.84],['I8 PRWAR Albay','ALB',.7,.88],['I8 PRWAR CamSur','CSR',.8,.8]];
+  const types=['Installation','Repair','Migration','Relocation','Pull-out','Survey'],tw=[38,30,12,9,6,5];
+  const aoa=[['Activity ID','Activity Status','Bucket','Resource','Activity Type','Date','Duration (min)']];
+  let id=4410200;const start=new Date(2026,7,1);
+  for(let d=0;d<71;d++){const day=new Date(start);day.setDate(start.getDate()+d);const sun=day.getDay()===0;
+    areas.forEach(([a,code,vol,cr])=>{const n=Math.round((sun?3:9)*vol*(0.7+rnd()*0.6));
+      for(let i=0;i<n;i++){const r=rnd();const st=r<cr?'completed':r<cr+0.08?'notdone':r<cr+0.12?'cancelled':pick(['pending','started','suspended'],[3,1,1]);
+        const ty=pick(types,tw);const dur=Math.round((ty==='Installation'?110:ty==='Repair'?75:60)*(0.6+rnd()*0.9));
+        aoa.push([String(id++),st,a,`${code}-T${String(1+Math.floor(rnd()*6)).padStart(2,'0')}`,ty,day,st==='cancelled'?null:dur])}})}
+  for(let i=0;i<6;i++)aoa.push([...aoa[10+i*37]]);
+  aoa[55][1]=null;aoa[120][1]=null;aoa[301][1]=null;aoa[88][5]='TBA';aoa[450][5]='TBA';
+  state.files=[{name:'OFSC_Sample.xlsx',size:0,lm:0,sample:true,sheets:[makeSheet('OFSC Aug–Oct',aoa,0)]}];
+  state.sample=true;afterLoad(false);
+}
+
+/* ---------- exports ---------- */
+let dlP=null;function dl(){if(!dlP)dlP=(window.claude&&window.claude.use)?window.claude.use('downloads').catch(()=>null):Promise.resolve(null);return dlP}
+async function save(filename,data){
+  const d=await dl();
+  if(!d){
+    if(!(window.claude&&window.claude.use)){ // standalone website (GitHub Pages / local): normal browser download
+      const blob=data instanceof Blob?data:new Blob([data]);const u=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Saved '+filename);return}
+    toast('Downloads are not available in this view. Open the report in claude.ai.');return}
+  try{await d.save({filename,data});toast('Saved '+filename)}catch(e){if(e&&e.code==='declined')return;toast(e&&e.code==='rate_limited'?'A save prompt is already open.':'Could not save the file.')}
+}
+const fileStem=()=>($('#rTitle').value.trim()||'INFIUS8 Report').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_')+'_'+dKey(new Date());
+
+function chartImg(cfg,w,h){
+  const host=$('#offscreen');const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.style.width=w+'px';cv.style.height=h+'px';host.appendChild(cv);
+  cfg.options.responsive=false;cfg.options.devicePixelRatio=3;
+  const prev={size:Chart.defaults.font.size,family:Chart.defaults.font.family};
+  Chart.defaults.font.size=9;Chart.defaults.font.family='Helvetica, Arial, sans-serif';
+  let url;try{const ch=new Chart(cv,cfg);url=ch.toBase64Image('image/png',1);ch.destroy()}finally{Chart.defaults.font.size=prev.size;Chart.defaults.font.family=prev.family;cv.remove()}
+  return url;
+}
+function rgb(hex){const n=parseInt(hex.slice(1),16);return [n>>16&255,n>>8&255,n&255]}
+async function exportPDF(){
+  if(!window.jspdf||!window.Chart){toast('PDF tools did not load. Check your connection and reload.');return}
+  const st=current;if(!st||!st.total){toast('Nothing to export yet.');return}
+  const btn=$('#pdfBtn');btn.disabled=true;
+  try{
+  const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'pt',format:'a4'});
+  const W=595.28,H=841.89,M=36,CW=W-2*M;const P=LIGHT;
+  const font={size:9,family:'helvetica'};const c=cfgs(st,P,font);
+  const title=$('#rTitle').value.trim()||'Operations Report';const by=$('#fBy').value.trim();
+  const now=new Date();
+  const header=()=>{doc.setFillColor(...rgb('#13212C'));doc.rect(0,0,W,54,'F');
+    doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text('INFIUS8',M,30);
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.text('AUTO REPORT',M,42);
+    doc.setFontSize(8.5);doc.text(`Generated ${dLabel(now)}${by?' · Prepared by '+by:''}`,W-M,33,{align:'right'})};
+  const h2=(t,y)=>{doc.setTextColor(...rgb(P.fg));doc.setFont('helvetica','bold');doc.setFontSize(11.5);doc.text(t,M,y)};
+  header();
+  doc.setTextColor(...rgb(P.fg));doc.setFont('helvetica','bold');doc.setFontSize(19);doc.text(title,M,86);
+  doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...rgb(P.fg2));doc.text($('#rMeta').textContent.replace('–','-'),M,101);
+  // KPIs
+  const ks=[['Total activities',fmt(st.total)],['Completion rate',fp(st.rate)],['Completed',fmt(st.groups.Completed)],['Not completed',fmt(st.groups['Not completed'])],['Cancelled',fmt(st.groups.Cancelled)]];
+  const kw=CW/ks.length;let y=114;
+  doc.setDrawColor(...rgb(P.grid));doc.setLineWidth(.7);doc.roundedRect(M,y,CW,52,4,4,'S');
+  ks.forEach(([l,v],i)=>{const x=M+i*kw;if(i)doc.line(x,y,x,y+52);
+    doc.setFontSize(7);doc.setTextColor(...rgb(P.fg2));doc.text(l.toUpperCase(),x+10,y+16);
+    doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(...rgb(i===1?P.accent:P.fg));doc.text(v,x+10,y+38);doc.setFont('helvetica','normal')});
+  // charts row
+  y=188;h2('Status distribution',y);doc.text('Activities by area',M+232,y);
+  c.status.options.plugins.legend.position='bottom';
+  doc.addImage(chartImg(c.status,220,190),'PNG',M,y+8,220,190);
+  const aH=Math.min(250,Math.max(190,c.areaH*.75));doc.addImage(chartImg(c.area,CW-232,aH),'PNG',M+232,y+8,CW-232,aH);
+  y=y+18+Math.max(190,aH);
+  if(c.trend){h2(`Trend · activities per ${st.trend.gran}`,y+14);doc.addImage(chartImg(c.trend,CW,170),'PNG',M,y+22,CW,170);y+=200}
+  // findings
+  const plain=s=>s.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/[–—]/g,'-');
+  const list=(items,yy,col)=>{doc.setFont('helvetica','normal');doc.setFontSize(9.5);
+    items.forEach(t=>{const lines=doc.splitTextToSize(plain(t),CW-14);if(yy+lines.length*12>H-50){doc.addPage();header();yy=80}
+      doc.setFillColor(...rgb(col));doc.circle(M+3,yy-3,1.8,'F');doc.setTextColor(...rgb(P.fg));doc.text(lines,M+12,yy);yy+=lines.length*12+4});return yy};
+  doc.addPage();header();y=82;
+  h2('Key findings',y);y=list(st.ins.F,y+18,P.accent)+8;
+  h2('Needs attention',y);y=list(st.ins.A,y+18,P.crit)+8;
+  // area table
+  const tStyle={theme:'plain',styles:{font:'helvetica',fontSize:8.5,cellPadding:4,textColor:rgb(P.fg),lineColor:rgb(P.grid),lineWidth:{bottom:.5}},headStyles:{fontStyle:'bold',textColor:rgb(P.fg2),fontSize:7.5},margin:{left:M,right:M,top:70},
+    didDrawPage:()=>{header()},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'},5:{halign:'right'}}};
+  h2('Area summary',y);
+  const row=([k,o])=>[k,fmt(o.total),fmt(o.Completed),fmt(o['Not completed']),fmt(o.Cancelled),fp(st.rateOf(o))];
+  doc.autoTable({...tStyle,startY:y+8,head:[['Area','Total','Completed','Not completed','Cancelled','Rate']],body:[...st.byArea].sort((a,b)=>b[1].total-a[1].total).map(row)});
+  y=doc.lastAutoTable.finalY+26;
+  if(y+c.typeH*.7>H-50){doc.addPage();header();y=82}
+  h2('Activity types (top 10)',y);const th=Math.min(230,c.typeH*.7);doc.addImage(chartImg(c.type,CW,th),'PNG',M,y+8,CW,th);y+=th+30;
+  if(state.map.resource){if(y>H-140){doc.addPage();header();y=82}
+    h2('Resources (top 20 by volume)',y);
+    doc.autoTable({...tStyle,startY:y+8,head:[['Resource','Total','Completed','Not completed','Cancelled','Rate']],body:[...st.byRes].sort((a,b)=>b[1].total-a[1].total).slice(0,20).map(row)});
+    y=doc.lastAutoTable.finalY+26}
+  // data quality
+  const v=state.val;if(y>H-110){doc.addPage();header();y=82}
+  h2('Data check',y);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...rgb(P.fg2));
+  const dq=`Rows read: ${fmt(v.read)} · Duplicate IDs: ${fmt(v.dup)}${state.rules.dup?' (excluded)':''} · Missing status: ${fmt(v.noStatus)} · Missing/invalid date: ${fmt(v.noDate+v.badDate)} · Missing area: ${fmt(v.noArea)}. Completion rate = Completed / ${state.rules.cancel?'(all activities - cancelled)':'all activities'}. Sources: ${state.files.map(f=>f.name).join(', ')}.`;
+  doc.text(doc.splitTextToSize(dq,CW),M,y+16);
+  const pages=doc.getNumberOfPages();
+  for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(7.5);doc.setTextColor(...rgb(P.fg2));doc.text(`INFIUS8 Auto Report · ${title}`,M,H-22);doc.text(`Page ${i} of ${pages}`,W-M,H-22,{align:'right'})}
+  await save(fileStem()+'.pdf',doc.output('blob'));
+  }catch(e){console.error(e);toast('Could not build the PDF.')}finally{btn.disabled=false}
+}
+async function exportXLSX(){
+  if(!window.XLSX){toast('Excel tools did not load.');return}
+  const st=current;if(!st){return}
+  const rows=filtered();const m=state.map;
+  const proc=rows.map(r=>({Source:r.src,Row:r.row,ID:r.id,Status:r.status,'Status group':r.group,Area:r.area,Resource:r.resource,'Activity type':r.type,Date:r.date||null,[m.value||'Measure']:r.val,Issues:r.iss.join(', ')}));
+  const all=state.recs.filter(r=>r.iss.length).map(r=>({Source:r.src,Row:r.row,ID:r.id,Status:r.status,Area:r.area,Issues:r.iss.join(', ')}));
+  const sum=[['INFIUS8 Auto Report',$('#rTitle').value],['Scope',$('#rMeta').textContent],[],['Total activities',st.total],['Completion rate (%)',+st.rate.toFixed(1)],['Completed',st.groups.Completed],['Not completed',st.groups['Not completed']],['Cancelled',st.groups.Cancelled],['Unclassified status',st.groups.Other],[],['Area','Total','Completed','Not completed','Cancelled','Rate (%)'],
+    ...[...st.byArea].sort((a,b)=>b[1].total-a[1].total).map(([k,o])=>[k,o.total,o.Completed,o['Not completed'],o.Cancelled,+st.rateOf(o).toFixed(1)])];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'Summary');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(proc,{cellDates:true}),'Processed data');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(all.length?all:[{Note:'No issues found'}]),'Issues');
+  const out=XLSX.write(wb,{bookType:'xlsx',type:'array',cellDates:true});
+  await save(fileStem()+'.xlsx',new Blob([out]));
+}
+
+/* ---------- events ---------- */
+const drop=$('#drop');
+['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',ev=>importFiles(ev.dataTransfer.files));
+$('#fileIn').addEventListener('change',ev=>{importFiles(ev.target.files);ev.target.value=''});
+$('#files').addEventListener('change',ev=>{const t=ev.target;if(t.dataset.f==null)return;state.files[+t.dataset.f].sheets[+t.dataset.s].include=t.checked;
+  const prevMap={...state.map};profile();state.map=Object.fromEntries(Object.entries(prevMap).filter(([,h])=>h.startsWith('__')||state.headers.includes(h)));rebuild()});
+$('#files').addEventListener('click',ev=>{const b=ev.target.closest('[data-rm]');if(!b)return;state.files.splice(+b.dataset.rm,1);if(!state.files.length){sample();return}afterLoad(false)});
+$('#mapGrid').addEventListener('change',ev=>{const s=ev.target;if(!s.dataset.role)return;if(s.value)state.map[s.dataset.role]=s.value;else delete state.map[s.dataset.role];saveFormat();rebuild()});
+$('#sg').addEventListener('change',ev=>{const s=ev.target;if(s.dataset.sv==null)return;const vals=JSON.parse($('#sg').dataset.vals||'[]');state.sg[vals[+s.dataset.sv]]=s.value;saveFormat();rebuild()});
+$('#ruleDup').addEventListener('change',e=>{state.rules.dup=e.target.checked;saveFormat();renderVal();renderReport()});
+$('#ruleCancel').addEventListener('change',e=>{state.rules.cancel=e.target.checked;saveFormat();renderReport()});
+$('#fArea').addEventListener('change',e=>{state.filters.area=e.target.value;renderReport()});
+$('#fMonth').addEventListener('change',e=>{state.filters.month=e.target.value;renderReport()});
+$('#fBy').value=ls.get('i8ar.by','');$('#fBy').addEventListener('change',e=>ls.set('i8ar.by',e.target.value));
+$('#rTitle').addEventListener('change',()=>{if(!$('#rTitle').value.trim())$('#rTitle').value='OFSC Operations Report'});
+$('#pdfBtn').addEventListener('click',exportPDF);
+$('#xlsxBtn').addEventListener('click',exportXLSX);
+function setPresent(on){document.body.classList.toggle('present',on);$('#presentBtn span').textContent=on?'Exit presentation':'Present';
+  if(on){try{document.documentElement.requestFullscreen?.().catch(()=>{})}catch(e){}window.scrollTo(0,0)}else{try{document.fullscreenElement&&document.exitFullscreen().catch(()=>{})}catch(e){}}
+  setTimeout(()=>current&&drawCharts(current),60)}
+$('#presentBtn').addEventListener('click',()=>setPresent(!document.body.classList.contains('present')));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('present'))setPresent(false)});
+const redraw=()=>current&&drawCharts(current);
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redraw)}catch(e){}
+new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+renderHistory();
+if(window.XLSX)sample();else{toast('Excel reader failed to load. Reload the page.')}
+dl();
+})();
+</script>
+
+</body>
+</html>
