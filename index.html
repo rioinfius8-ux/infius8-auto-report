@@ -328,7 +328,10 @@ function periodInfo(){
     plabel:kind==='month'?ml(pf):rangeLabel(pf,addDays(pt,-1)),
     pname:kind==='week'?'last week':kind==='month'?'last month':'previous period'};
 }
-function defaultPeriod(){let mx=null;state.recs.forEach(r=>{if(r.date&&(!mx||r.date>mx))mx=r.date});return mx?'w:'+dKey(weekStart(mx)):'all'}
+function defaultPeriod(){
+  const n=new Date(),tm=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1);let mx=null,any=null;
+  state.recs.forEach(r=>{if(!r.date)return;if(!any||r.date>any)any=r.date;if(r.date<tm&&(!mx||r.date>mx))mx=r.date});
+  mx=mx||any;return mx?'w:'+dKey(weekStart(mx)):'all'}
 function autoTitle(){
   if(!state.titleAuto)return;const pi=periodInfo();
   const kw=pi?(pi.kind==='week'?'Weekly ':pi.kind==='month'?'Monthly ':''):'';
@@ -405,7 +408,7 @@ function autoMap(){
     ROLES.forEach(r=>{let k=r.kw.findIndex(rx=>rx.test(l));if(k<0)return;let s=12-k;const t=p.type;
       if(r.key==='date')s+=t==='date'?6:-20;
       else if(r.key==='value')s+=t==='num'?6:-20;
-      else if(r.key==='id')s+=(t==='id'||p.uniq>.9)?6:-8;
+      else if(r.key==='id')s+=(t==='id'||p.uniq>.9||(k===0&&p.uniq>.4))?6:-8;
       else s+=t==='cat'?5:(t==='text'?-2:-12);
       s+=p.fill*3;c.push({role:r.key,h,s})})});
   c.sort((a,b)=>b.s-a.s);
@@ -427,7 +430,8 @@ function saveFormat(){if(state.sample)return;const f=formats();f[state.sig]={map
 /* ---------- records & validation ---------- */
 function build(){
   const m=state.map,recs=[];const seen=new Map();
-  const v={read:0,dup:0,noId:0,noStatus:0,noDate:0,badDate:0,noArea:0,badNum:0,samples:[]};
+  const v={read:0,dup:0,noId:0,noStatus:0,noDate:0,badDate:0,future:0,noArea:0,badNum:0,samples:[]};
+  const now=new Date();const tomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
   const serial=true;
   for(const {f,s} of incSheets()){
     const ix=k=>m[k]&&!m[k].startsWith('__')?s.headers.indexOf(m[k]):-1;
@@ -443,7 +447,7 @@ function build(){
       const vRaw=g('value');const val=m.value?toNum(vRaw):null;
       if(m.id&&!id){v.noId++;iss.push('Missing ID')}
       if(m.status&&!stRaw){v.noStatus++;iss.push('Missing status')}
-      if(m.date){if(blank(dRaw)){v.noDate++;iss.push('Missing date')}else if(!date){v.badDate++;iss.push('Invalid date')}}
+      if(m.date){if(blank(dRaw)){v.noDate++;iss.push('Missing date')}else if(!date){v.badDate++;iss.push('Invalid date')}else if(date>=tomorrow){v.future++;iss.push('Date is in the future')}}
       if(m.area&&!area){v.noArea++;iss.push('Missing area')}
       if(m.value&&!blank(vRaw)&&val==null){v.badNum++;iss.push('Not a number')}
       let dup=false;
@@ -543,6 +547,7 @@ function insights(st){
   if(res.length>=4){const low=res.slice(0,3).filter(x=>x.r<st.rate-5);if(low.length)A.push(`Lowest-completing resources (10+ activities): ${low.map(x=>`<b>${esc(x.k)}</b> ${fp(x.r)}`).join(', ')}.`)}
   if(st.groups['Not completed'])A.push(`<b>${fmt(st.groups['Not completed'])}</b> activities are not completed (${fp(pct(st.groups['Not completed'],st.total))}). Follow up for rescheduling or validation.`);
   if(st.groups.Other)A.push(`${fmt(st.groups.Other)} records have a status the report could not group. Set them under Status groups.`);
+  if(v.future)A.push(`${fmt(v.future)} records have a date after today in "${esc(state.map.date)}". Check for day/month mix-ups in the source before trusting weekly figures.`);
   if(v.dup)A.push(`${fmt(v.dup)} duplicate IDs found in the source${state.rules.dup?' and excluded from totals':''}.`);
   const miss=v.noStatus+v.badDate+v.noDate+v.noArea;
   if(miss)A.push(`${fmt(miss)} data gaps in the source (missing status, area or date, or invalid dates). Clean these in the Excel before the final report.`);
@@ -585,7 +590,7 @@ function renderVal(){
   const c=(cls,label,n)=>`<span class="chip ${cls}">${label} <b class="num">${n}</b></span>`;
   $('#vstrip').innerHTML=[c('','Rows read',fmt(v.read)),c('ok','Used in report',fmt(used)),c(q>=95?'ok':q>=80?'warn':'bad','Clean rows',fp(q)),
     state.map.id?c(v.dup?'warn':'ok','Duplicate IDs',fmt(v.dup)):'',state.map.id?c(v.noId?'warn':'ok','Missing ID',fmt(v.noId)):'',
-    state.map.status?c(v.noStatus?'bad':'ok','Missing status',fmt(v.noStatus)):'',state.map.date?c(v.noDate+v.badDate?'warn':'ok','Missing / invalid date',fmt(v.noDate+v.badDate)):'',
+    state.map.status?c(v.noStatus?'bad':'ok','Missing status',fmt(v.noStatus)):'',state.map.date?c(v.noDate+v.badDate?'warn':'ok','Missing / invalid date',fmt(v.noDate+v.badDate)):'',state.map.date&&v.future?c('bad','Future dates',fmt(v.future)):'',
     state.map.area?c(v.noArea?'warn':'ok','Missing area',fmt(v.noArea)):'',state.map.value?c(v.badNum?'warn':'ok','Non-numeric measure',fmt(v.badNum)):''].join('');
   $('#valHint').textContent=bad?`${fmt(bad)} rows have at least one issue. They stay in the data and are flagged.`:'No issues found.';
   $('#issues').innerHTML=v.samples.length?`<table><thead><tr><th>Source</th><th class="n">Row</th><th>ID</th><th>Status</th><th>Issue</th></tr></thead><tbody>${v.samples.slice(0,60).map(r=>`<tr><td class="small">${esc(r.src)}</td><td class="n">${r.row}</td><td>${esc(r.id)||'—'}</td><td>${esc(r.status)}</td><td style="color:var(--crit)">${esc(r.iss.join(', '))}</td></tr>`).join('')}</tbody></table>${v.samples.length>60?'<div class="small" style="margin-top:6px">Showing first 60. Export Excel for the full list.</div>':''}`:'<div class="small">Nothing to show.</div>';
