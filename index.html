@@ -15,6 +15,7 @@ html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!i
   --bg:#EEF2F4; --surface:#FFFFFF; --sunken:#F5F8F9; --ink:#13212C; --ink-2:#4B5B68; --ink-3:#7A8894; --line:#D7DFE4;
   --accent:#0A7480; --accent-ink:#FFFFFF; --accent-soft:#DDF0F1;
   --good:#2C8A57; --crit:#C2453B; --warn:#B9800C; --muted:#8B98A4;
+  --c1:#0A7480; --c2:#C4622D; --c3:#5457C9; --c4:#AE3A78; --c5:#5F8A1E; --c6:#8C6A2E;
   --bar:#13212C; --bar-ink:#E9EFF2;
   --f-display:"Archivo","Arial Narrow",Arial,sans-serif;
   --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -25,11 +26,13 @@ html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!i
   --bg:#0D1419; --surface:#151F26; --sunken:#111A20; --ink:#E4EBEF; --ink-2:#9FAEB9; --ink-3:#6E7E8A; --line:#24323C;
   --accent:#3CB3BE; --accent-ink:#06171A; --accent-soft:#12343A;
   --good:#4CC08A; --crit:#E8705F; --warn:#E3AA3E; --muted:#6F7F8B;
+  --c1:#3CB3BE; --c2:#EE8C55; --c3:#8C8FF0; --c4:#E07AB0; --c5:#9BC75A; --c6:#C9A464;
   --bar:#0A1014; --bar-ink:#E4EBEF; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0D1419; --surface:#151F26; --sunken:#111A20; --ink:#E4EBEF; --ink-2:#9FAEB9; --ink-3:#6E7E8A; --line:#24323C;
   --accent:#3CB3BE; --accent-ink:#06171A; --accent-soft:#12343A;
   --good:#4CC08A; --crit:#E8705F; --warn:#E3AA3E; --muted:#6F7F8B;
+  --c1:#3CB3BE; --c2:#EE8C55; --c3:#8C8FF0; --c4:#E07AB0; --c5:#9BC75A; --c6:#C9A464;
   --bar:#0A1014; --bar-ink:#E4EBEF; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
@@ -95,7 +98,12 @@ details[open].panel>summary .chev{transform:rotate(90deg)}
 .map-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:6px}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field label{font-size:12px;font-weight:600;color:var(--ink-2)}
-.field select,.field input[type=text]{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface)}
+.delta{font-family:var(--f-mono);font-size:11.5px;font-weight:600;margin-top:4px}
+.delta.good{color:var(--good)}.delta.bad{color:var(--crit)}.delta.neu{color:var(--ink-2)}
+.delta small{font-family:var(--f-body);font-weight:400;color:var(--ink-3)}
+td .delta{margin:0}
+.range{display:flex;gap:6px}
+.field select,.field input[type=text],.field input[type=date]{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface)}
 .field .ex{font-family:var(--f-mono);font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rules{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:13px}
 .rules label{display:flex;gap:6px;align-items:center;cursor:pointer}
@@ -235,7 +243,8 @@ body.present .kpi .v{font-size:34px}
       </div>
       <div class="filters">
         <div class="field"><label for="fArea">Area</label><select id="fArea"></select></div>
-        <div class="field"><label for="fMonth">Period</label><select id="fMonth"></select></div>
+        <div class="field"><label for="fPeriod">Period</label><select id="fPeriod"></select></div>
+        <div class="field" id="customBox" hidden><label for="fFrom">From – to</label><div class="range"><input type="date" id="fFrom" aria-label="From date"><input type="date" id="fTo" aria-label="To date"></div></div>
         <div class="field setup"><label for="fBy">Prepared by</label><input type="text" id="fBy" placeholder="Your name"></div>
       </div>
     </div>
@@ -245,6 +254,7 @@ body.present .kpi .v{font-size:34px}
         <div class="card"><h3>Status distribution</h3><div class="small" id="cs1"></div><div class="cbox" style="height:240px"><canvas id="chStatus"></canvas></div><div class="statuslist" id="statusList"></div></div>
         <div class="card"><h3>Activities by area</h3><div class="small">Stacked by status group</div><div class="cbox" id="areaBox"><canvas id="chArea"></canvas></div></div>
         <div class="card wide"><h3>Trend</h3><div class="small" id="cs3"></div><div class="cbox" style="height:260px"><canvas id="chTrend"></canvas></div></div>
+        <div class="card wide"><h3>Completion rate by area, week by week</h3><div class="small" id="cs4"></div><div class="cbox" style="height:260px"><canvas id="chWeekly"></canvas></div></div>
       </div>
       <div class="insights">
         <div><h3 style="font-size:15px">Key findings</h3><ul id="findings"></ul></div>
@@ -292,8 +302,46 @@ const ROLES=[
  {key:'value',label:'Measure (number)',kw:[/duration/,/amount/,/cost/,/hours?\b/,/minutes?/,/travel/,/qty|quantity/,/total/]}
 ];
 
-const state={files:[],map:{},sg:{},rules:{dup:true,cancel:false},sample:true,filters:{area:'all',month:'all'},recs:[],val:null,prof:{},headers:[],sig:''};
+const state={files:[],map:{},sg:{},rules:{dup:true,cancel:false},sample:true,filters:{area:'all',period:'all',from:'',to:''},titleAuto:true,recs:[],val:null,prof:{},headers:[],sig:''};
 let charts={};
+
+/* ---------- periods ---------- */
+const DAY=864e5;
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const weekStart=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
+const parseKey=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d||1)};
+function rangeLabel(a,b){
+  if(a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth())return `${MON[a.getMonth()]} ${a.getDate()}–${b.getDate()}, ${a.getFullYear()}`;
+  if(a.getFullYear()===b.getFullYear())return `${MON[a.getMonth()]} ${a.getDate()} – ${MON[b.getMonth()]} ${b.getDate()}, ${a.getFullYear()}`;
+  return `${dLabel(a)} – ${dLabel(b)}`}
+function periodInfo(){
+  const p=state.filters.period;if(!p||p==='all')return null;
+  let from,to,kind;
+  if(p.startsWith('w:')){from=parseKey(p.slice(2));to=addDays(from,7);kind='week'}
+  else if(p.startsWith('m:')){from=parseKey(p.slice(2));to=new Date(from.getFullYear(),from.getMonth()+1,1);kind='month'}
+  else{const f=state.filters.from,t=state.filters.to;if(!f||!t)return null;from=parseKey(f);to=addDays(parseKey(t),1);if(to<=from)return null;kind='range'}
+  let pf,pt;
+  if(kind==='month'){pf=new Date(from.getFullYear(),from.getMonth()-1,1);pt=from}else{const n=Math.round((to-from)/DAY);pf=addDays(from,-n);pt=from}
+  const ml=d=>MON[d.getMonth()]+' '+d.getFullYear();
+  return {kind,from,to,pf,pt,
+    label:kind==='month'?ml(from):rangeLabel(from,addDays(to,-1)),
+    plabel:kind==='month'?ml(pf):rangeLabel(pf,addDays(pt,-1)),
+    pname:kind==='week'?'last week':kind==='month'?'last month':'previous period'};
+}
+function defaultPeriod(){let mx=null;state.recs.forEach(r=>{if(r.date&&(!mx||r.date>mx))mx=r.date});return mx?'w:'+dKey(weekStart(mx)):'all'}
+function autoTitle(){
+  if(!state.titleAuto)return;const pi=periodInfo();
+  const kw=pi?(pi.kind==='week'?'Weekly ':pi.kind==='month'?'Monthly ':''):'';
+  $('#rTitle').value=pi?`OFSC ${kw}Report · ${pi.label}`:'OFSC Operations Report';
+}
+function dlt(cur,prv,mode,goodUp){
+  if(prv==null||!isFinite(prv))return null;
+  let d;if(mode==='pts')d=cur-prv;else{if(!prv)return null;d=pct(cur-prv,prv)}
+  const flat=Math.abs(d)<0.05;const unit=mode==='pts'?' pts':'%';
+  return {d,mode,flat,cls:flat||goodUp==null?'neu':((d>0)===goodUp?'good':'bad'),
+    txt:flat?'no change':`${d>0?'▲':'▼'} ${fmt(Math.abs(d),1)}${unit}`,
+    plain:flat?'no change':`${d>0?'+':'-'}${fmt(Math.abs(d),1)}${unit}`};
+}
 
 /* ---------- parsing ---------- */
 function mk(y,m,d){if(m<1||m>12||d<1||d>31)return null;const x=new Date(y,m-1,d);return x.getMonth()===m-1?x:null}
@@ -411,7 +459,22 @@ function build(){
 function statusValues(){const c=new Map();state.recs.forEach(r=>c.set(r.status,(c.get(r.status)||0)+1));return [...c].sort((a,b)=>b[1]-a[1])}
 
 /* ---------- compute ---------- */
-function filtered(){const {area,month}=state.filters;return state.recs.filter(r=>(!state.rules.dup||!r.dup)&&(area==='all'||r.area===area)&&(month==='all'||(r.date&&mKey(r.date)===month)))}
+function filtered(from,to){const a=state.filters.area;return state.recs.filter(r=>(!state.rules.dup||!r.dup)&&(a==='all'||r.area===a)&&(!from||(r.date&&r.date>=from&&r.date<to)))}
+function weeklyArea(end){
+  const a=state.filters.area;
+  const rs=state.recs.filter(r=>r.date&&(!state.rules.dup||!r.dup)&&(a==='all'||r.area===a));
+  if(!rs.length)return null;
+  if(!end){let mx=rs[0].date;rs.forEach(r=>{if(r.date>mx)mx=r.date});end=addDays(mx,1)}
+  const last=weekStart(addDays(end,-1));const weeks=[];for(let i=7;i>=0;i--)weeks.push(addDays(last,-7*i));
+  const lo=weeks[0],hi=addDays(last,7);
+  const win=rs.filter(r=>r.date>=lo&&r.date<hi);if(!win.length)return null;
+  const vol=new Map();win.forEach(r=>vol.set(r.area,(vol.get(r.area)||0)+1));
+  const areas=[...vol].sort((x,y)=>y[1]-x[1]).slice(0,6).map(x=>x[0]);
+  const cell=new Map();
+  win.forEach(r=>{if(!areas.includes(r.area))return;const k=r.area+'|'+dKey(weekStart(r.date));const o=cell.get(k)||{t:0,c:0,x:0};o.t++;if(r.group==='Completed')o.c++;if(r.group==='Cancelled')o.x++;cell.set(k,o)});
+  const series=areas.map(ar=>({name:ar,vals:weeks.map(w=>{const o=cell.get(ar+'|'+dKey(w));if(!o)return null;const base=state.rules.cancel?o.t-o.x:o.t;return base?+pct(o.c,base).toFixed(1):null})}));
+  return {labels:weeks.map(w=>`${MON[w.getMonth()]} ${w.getDate()}`),series,more:vol.size>6};
+}
 function compute(rs){
   const st={total:rs.length,groups:{},byArea:new Map(),byType:new Map(),byRes:new Map(),byStatus:new Map(),dates:[],valSum:0,valN:0};
   GROUPS.forEach(g=>st.groups[g]=0);
@@ -445,6 +508,21 @@ function insights(st){
   const period=st.min?` from <b>${dLabel(st.min)}</b> to <b>${dLabel(st.max)}</b>`:'';
   F.push(`<b>${fmt(st.total)}</b> activities${period}${areas.length>1?` across <b>${areas.length}</b> areas`:''}.`);
   F.push(`Completion rate is <b>${fp(st.rate)}</b>: ${fmt(st.groups.Completed)} completed, ${fmt(st.groups['Not completed'])} not completed, ${fmt(st.groups.Cancelled)} cancelled.`);
+  const pv=st.prev,pi=st.pi;
+  if(pi&&st.cov){
+    if(st.cov.cur)F.push(`Data for ${esc(pi.label)} only runs up to <b>${dLabel(st.cov.max)}</b>, so this period may still be incomplete.`);
+    if(pv&&st.cov.prev)A.push(`${pi.pname[0].toUpperCase()+pi.pname.slice(1)} only has data from ${dLabel(st.cov.min)}, so volume changes against it are overstated. Import that period's full file for a fair comparison.`);
+  }
+  if(pi&&pv&&pv.total){
+    const dv=pct(st.total-pv.total,pv.total),dr=st.rate-pv.rate;
+    const vtxt=Math.abs(dv)<0.05?'unchanged':`${dv>0?'up':'down'} <b>${fmt(Math.abs(dv),1)}%</b>`;
+    F.push(`Compared with ${pi.pname} (${esc(pi.plabel)}): volume ${vtxt} (${fmt(pv.total)} → ${fmt(st.total)}), completion rate ${Math.abs(dr)<0.05?'unchanged':(dr>0?'up':'down')+` <b>${fmt(Math.abs(dr),1)} pts</b>`} (${fp(pv.rate)} → ${fp(st.rate)}).`);
+    if(dr<=-3)A.push(`Completion rate dropped ${fmt(-dr,1)} pts versus ${pi.pname}. Check which areas and activity types caused it.`);
+    const ch=[...st.byArea].filter(([k,o])=>k!=='(Blank)'&&o.total>=5&&pv.byArea.get(k)?.total>=5).map(([k,o])=>({k,d:st.rateOf(o)-pv.rateOf(pv.byArea.get(k))})).sort((a,b)=>b.d-a.d);
+    if(ch.length>1){const up=ch[0],dn=ch[ch.length-1];
+      if(up.d>=1)F.push(`Most improved area: <b>${esc(up.k)}</b>, up ${fmt(up.d,1)} pts in completion rate versus ${pi.pname}.`);
+      if(dn.d<=-3)A.push(`<b>${esc(dn.k)}</b> completion rate fell ${fmt(-dn.d,1)} pts versus ${pi.pname}.`)}
+  }else if(pi)F.push(`No records for ${pi.pname} (${esc(pi.plabel)}), so there is nothing to compare against. Import that period's file too to see the change.`);
   const minN=Math.max(5,st.total*.02);
   const ranked=areas.filter(([,o])=>o.total>=minN).map(([k,o])=>({k,o,r:st.rateOf(o)})).sort((a,b)=>b.r-a.r);
   if(ranked.length>1){const b=ranked[0],w=ranked[ranked.length-1];
@@ -457,7 +535,7 @@ function insights(st){
   if(st.trend&&st.trend.keys.length>1){const t=st.trend;let mi=0;t.total.forEach((x,i)=>{if(x>t.total[mi])mi=i});
     const unit=t.gran==='day'?'day':t.gran==='week'?'week':'month';
     F.push(`Busiest ${unit}: <b>${t.labels[mi]}</b> with ${fmt(t.total[mi])} activities.`);
-    if(t.gran!=='day'&&t.keys.length>=2){const a=t.total[t.total.length-2],b=t.total[t.total.length-1];
+    if(!pi&&t.gran!=='day'&&t.keys.length>=2){const a=t.total[t.total.length-2],b=t.total[t.total.length-1];
       if(a)F.push(`Latest ${unit} (${t.labels[t.labels.length-1]}) volume is ${fmt(b)}, ${b>=a?'up':'down'} ${fp(Math.abs(pct(b-a,a)))} from the ${unit} before${unit!=='day'?' (latest period may still be in progress)':''}.`)}}
   if(state.map.value&&st.valN)F.push(`${esc(state.map.value)}: total <b>${fmt(st.valSum,1)}</b>, average <b>${fmt(st.valSum/st.valN,1)}</b> per activity.`);
   const res=[...st.byRes].filter(([k,o])=>k!=='(Blank)'&&o.total>=10).map(([k,o])=>({k,o,r:st.rateOf(o)})).sort((a,b)=>a.r-b.r);
@@ -512,18 +590,28 @@ function renderVal(){
   $('#issues').innerHTML=v.samples.length?`<table><thead><tr><th>Source</th><th class="n">Row</th><th>ID</th><th>Status</th><th>Issue</th></tr></thead><tbody>${v.samples.slice(0,60).map(r=>`<tr><td class="small">${esc(r.src)}</td><td class="n">${r.row}</td><td>${esc(r.id)||'—'}</td><td>${esc(r.status)}</td><td style="color:var(--crit)">${esc(r.iss.join(', '))}</td></tr>`).join('')}</tbody></table>${v.samples.length>60?'<div class="small" style="margin-top:6px">Showing first 60. Export Excel for the full list.</div>':''}`:'<div class="small">Nothing to show.</div>';
 }
 function renderFilters(){
+  const F=state.filters;
   const areas=[...new Set(state.recs.map(r=>r.area))].sort();
-  const months=[...new Set(state.recs.filter(r=>r.date).map(r=>mKey(r.date)))].sort();
-  if(state.filters.area!=='all'&&!areas.includes(state.filters.area))state.filters.area='all';
-  if(state.filters.month!=='all'&&!months.includes(state.filters.month))state.filters.month='all';
-  $('#fArea').innerHTML=`<option value="all">All areas</option>`+areas.map(a=>`<option ${a===state.filters.area?'selected':''} value="${esc(a)}">${esc(a)}</option>`).join('');
-  $('#fMonth').innerHTML=`<option value="all">All months</option>`+months.map(m=>`<option ${m===state.filters.month?'selected':''} value="${m}">${mLabel(m)}</option>`).join('');
+  const ds=state.recs.filter(r=>r.date).map(r=>r.date);
+  const weeks=[...new Set(ds.map(d=>dKey(weekStart(d))))].sort().reverse().slice(0,30);
+  const months=[...new Set(ds.map(d=>mKey(d)))].sort().reverse();
+  if(F.area!=='all'&&!areas.includes(F.area))F.area='all';
+  const p=F.period;
+  if((p.startsWith('w:')&&!weeks.includes(p.slice(2)))||(p.startsWith('m:')&&!months.includes(p.slice(2)))||(p==='custom'&&!ds.length))F.period=ds.length?defaultPeriod():'all';
+  $('#fArea').innerHTML=`<option value="all">All areas</option>`+areas.map(a=>`<option ${a===F.area?'selected':''} value="${esc(a)}">${esc(a)}</option>`).join('');
+  const o=(v,l)=>`<option value="${v}" ${v===F.period?'selected':''}>${l}</option>`;
+  $('#fPeriod').innerHTML=o('all','All dates')+
+    (weeks.length?`<optgroup label="Weeks (Mon–Sun)">${weeks.map(w=>{const s=parseKey(w);return o('w:'+w,rangeLabel(s,addDays(s,6)))}).join('')}</optgroup>`:'')+
+    (months.length?`<optgroup label="Months">${months.map(m=>o('m:'+m,mLabel(m))).join('')}</optgroup>`:'')+
+    (ds.length?o('custom','Custom range…'):'');
+  $('#customBox').hidden=F.period!=='custom';
+  $('#fFrom').value=F.from;$('#fTo').value=F.to;
 }
 
 /* ---------- charts ---------- */
 function tok(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
-function pal(){return {fg:tok('--ink'),fg2:tok('--ink-2'),grid:tok('--line'),accent:tok('--accent'),good:tok('--good'),crit:tok('--crit'),warn:tok('--warn'),muted:tok('--muted'),surface:tok('--surface')}}
-const LIGHT={fg:'#13212C',fg2:'#4B5B68',grid:'#D7DFE4',accent:'#0A7480',good:'#2C8A57',crit:'#C2453B',warn:'#B9800C',muted:'#8B98A4',surface:'#FFFFFF'};
+function pal(){return {fg:tok('--ink'),fg2:tok('--ink-2'),grid:tok('--line'),accent:tok('--accent'),good:tok('--good'),crit:tok('--crit'),warn:tok('--warn'),muted:tok('--muted'),surface:tok('--surface'),cat:[1,2,3,4,5,6].map(i=>tok('--c'+i))}}
+const LIGHT={fg:'#13212C',fg2:'#4B5B68',grid:'#D7DFE4',accent:'#0A7480',good:'#2C8A57',crit:'#C2453B',warn:'#B9800C',muted:'#8B98A4',surface:'#FFFFFF',cat:['#0A7480','#C4622D','#5457C9','#AE3A78','#5F8A1E','#8C6A2E']};
 function alpha(hex,a){const h=hex.replace('#','');const n=parseInt(h.length===3?h.split('').map(c=>c+c).join(''):h,16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
 function scales(P,stacked,horiz){const ax={grid:{color:P.grid,drawTicks:false},border:{display:false},ticks:{color:P.fg2,padding:6},stacked};
   return horiz?{x:{...ax,beginAtZero:true},y:{...ax,grid:{display:false}}}:{x:{...ax,grid:{display:false}},y:{...ax,beginAtZero:true}}}
@@ -545,6 +633,13 @@ function cfgs(st,P,font){
     {label:'All activities',data:st.trend.total,borderColor:P.accent,backgroundColor:alpha(P.accent,.12),fill:true,tension:.3,pointRadius:st.trend.keys.length>40?0:3,pointBackgroundColor:P.accent,borderWidth:2},
     {label:'Completed',data:st.trend.done,borderColor:P.good,backgroundColor:'transparent',tension:.3,pointRadius:st.trend.keys.length>40?0:3,pointBackgroundColor:P.good,borderWidth:2}]},
     options:{...base,interaction:{mode:'index',intersect:false},scales:scales(P,false,false),plugins:{...base.plugins,legend:{position:'top',align:'end',labels:base.plugins.legend.labels}}}};
+  if(st.weekly){
+    const w=st.weekly;const all=w.series.flatMap(s=>s.vals).filter(v=>v!=null);
+    const lo=all.length?Math.max(0,Math.floor((Math.min(...all)-5)/5)*5):0;
+    const sc=scales(P,false,false);sc.y={...sc.y,beginAtZero:false,min:lo,max:100,ticks:{...sc.y.ticks,callback:v=>v+'%'}};
+    out.weekly={type:'line',data:{labels:w.labels,datasets:w.series.map((s,i)=>({label:s.name,data:s.vals,borderColor:P.cat[i%6],backgroundColor:P.cat[i%6],pointBackgroundColor:P.cat[i%6],pointRadius:3,borderWidth:2,tension:.25,spanGaps:true}))},
+      options:{...base,interaction:{mode:'index',intersect:false},scales:sc,plugins:{...base.plugins,legend:{position:'bottom',labels:base.plugins.legend.labels},tooltip:{...base.plugins.tooltip,callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y==null?'—':c.parsed.y+'%'}`}}}}};
+  }
   return out;
 }
 function drawCharts(st){
@@ -557,27 +652,41 @@ function drawCharts(st){
   charts.area=new Chart($('#chArea'),c.area);
   charts.type=new Chart($('#chType'),c.type);
   if(c.trend)charts.trend=new Chart($('#chTrend'),c.trend);
+  if(c.weekly)charts.weekly=new Chart($('#chWeekly'),c.weekly);
 }
 
 /* ---------- render: report ---------- */
 let current=null;
 function renderReport(){
-  const rs=filtered();const st=compute(rs);current=st;
+  const pi=periodInfo();
+  const rs=filtered(pi&&pi.from,pi&&pi.to);const st=compute(rs);
+  const pr=pi?filtered(pi.pf,pi.pt):[];const pv=pr.length?compute(pr):null;
+  st.prev=pv;st.pi=pi;st.weekly=weeklyArea(pi&&pi.to);current=st;
+  st.cov=null;
+  if(pi){let mn=null,mx=null;state.recs.forEach(r=>{if(!r.date)return;if(!mn||r.date<mn)mn=r.date;if(!mx||r.date>mx)mx=r.date});
+    if(mn)st.cov={min:mn,max:mx,cur:addDays(pi.to,-1)>mx,prev:pi.pf<mn}}
+  const partial=st.cov&&st.cov.prev?' · partial data':'';
   const f=state.filters;
-  const per=st.min?`${dLabel(st.min)} – ${dLabel(st.max)}`:'No dates mapped';
-  $('#rMeta').textContent=`${per} · ${f.area==='all'?'All areas':f.area}${f.month!=='all'?' · '+mLabel(f.month):''}`;
-  if(!st.total){$('#kpis').innerHTML=`<div class="empty" style="grid-column:1/-1">No records to show. Import a file or change the filters.</div>`}
+  const per=pi?pi.label:st.min?`${dLabel(st.min)} – ${dLabel(st.max)}`:'No dates mapped';
+  $('#rMeta').textContent=`${per} · ${f.area==='all'?'All areas':f.area}${pi?` · compared with ${pi.plabel}`:''}`;
+  const D=pv?{total:dlt(st.total,pv.total,'pct',null),rate:dlt(st.rate,pv.rate,'pts',true),done:dlt(st.groups.Completed,pv.groups.Completed,'pct',true),
+    nd:dlt(st.groups['Not completed'],pv.groups['Not completed'],'pct',false),cx:dlt(st.groups.Cancelled,pv.groups.Cancelled,'pct',false),
+    val:st.valN&&pv.valN?dlt(st.valSum/st.valN,pv.valSum/pv.valN,'pct',null):null}:{};
+  st.deltas=D;
+  const dh=d=>d?`<span class="delta ${d.cls}">${d.txt} <small>vs ${pi.pname}${partial}</small></span>`:(pi?`<span class="delta neu"><small>no data for ${pi.pname}</small></span>`:'');
+  if(!st.total){$('#kpis').innerHTML=`<div class="empty" style="grid-column:1/-1">No records for this period. Import a file or pick another period.</div>`}
   else{
-    const k=(l,v,s,cls='')=>`<div class="kpi ${cls}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></div>`;
+    const k=(l,v,s,d,cls='')=>`<div class="kpi ${cls}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span>${dh(d)}</div>`;
     $('#kpis').innerHTML=[
-      k('Total activities',fmt(st.total),state.rules.dup&&state.val.dup?`${fmt(state.val.dup)} duplicates excluded`:'all records in view'),
-      `<div class="kpi hero"><span class="l">Completion rate</span><span class="v">${fp(st.rate)}</span><div class="meter"><i style="width:${Math.min(100,st.rate)}%"></i></div><span class="s">${state.rules.cancel?'excl. cancelled':'of all activities'}</span></div>`,
-      k('Completed',fmt(st.groups.Completed),fp(pct(st.groups.Completed,st.total))+' of total'),
-      k('Not completed',fmt(st.groups['Not completed']),fp(pct(st.groups['Not completed'],st.total))+' of total'),
-      k('Cancelled',fmt(st.groups.Cancelled),fp(pct(st.groups.Cancelled,st.total))+' of total'),
-      state.map.value&&st.valN?k(esc(state.map.value),fmt(st.valSum/st.valN,1),`average · total ${fmt(st.valSum,0)}`):''
+      k('Total activities',fmt(st.total),state.rules.dup&&state.val.dup?`${fmt(state.val.dup)} duplicates excluded`:'all records in view',D.total),
+      `<div class="kpi hero"><span class="l">Completion rate</span><span class="v">${fp(st.rate)}</span><div class="meter"><i style="width:${Math.min(100,st.rate)}%"></i></div><span class="s">${state.rules.cancel?'excl. cancelled':'of all activities'}</span>${dh(D.rate)}</div>`,
+      k('Completed',fmt(st.groups.Completed),fp(pct(st.groups.Completed,st.total))+' of total',D.done),
+      k('Not completed',fmt(st.groups['Not completed']),fp(pct(st.groups['Not completed'],st.total))+' of total',D.nd),
+      k('Cancelled',fmt(st.groups.Cancelled),fp(pct(st.groups.Cancelled,st.total))+' of total',D.cx),
+      state.map.value&&st.valN?k(esc(state.map.value),fmt(st.valSum/st.valN,1),`average · total ${fmt(st.valSum,0)}`,D.val):''
     ].join('');
   }
+  $('#cs4').textContent=st.weekly?`Last 8 weeks up to ${pi?pi.label:'the latest date'}${st.weekly.more?' · top 6 areas by volume':''}`:'Map a Date column to see weekly rates';
   $('#cs1').textContent=`${fmt(st.byStatus.size)} distinct status values`;
   $('#statusList').innerHTML=[...st.byStatus].sort((a,b)=>b[1].n-a[1].n).map(([v,o])=>`<div><span class="dot" style="background:var(--${GCOL[o.g]})"></span><span class="v">${esc(v)}</span><span class="c">${fmt(o.n)}</span></div>`).join('');
   $('#cs3').textContent=st.trend?`Activities per ${st.trend.gran} · all vs completed`:'Map a Date column to see the trend';
@@ -586,7 +695,8 @@ function renderReport(){
   $('#attention').innerHTML=A.map(x=>`<li>${x}</li>`).join('');
   const rateCell=r=>{const col=r>=90?'var(--good)':r>=75?'var(--warn)':'var(--crit)';return `<div class="rate"><span class="num">${fp(r)}</span><span class="mb"><i style="width:${Math.min(100,r)}%;background:${col}"></i></span></div>`};
   const areas=[...st.byArea].sort((a,b)=>b[1].total-a[1].total);
-  $('#areaTbl').innerHTML=`<table><thead><tr><th>Area</th><th class="n">Total</th><th class="n">Done</th><th class="n">Not done</th><th class="n">Cancel</th><th class="n">Rate</th></tr></thead><tbody>${areas.map(([k,o])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(o.total)}</td><td class="n">${fmt(o.Completed)}</td><td class="n">${fmt(o['Not completed'])}</td><td class="n">${fmt(o.Cancelled)}</td><td class="n">${rateCell(st.rateOf(o))}</td></tr>`).join('')}</tbody></table>`;
+  const areaD=k=>{const p=pv&&pv.byArea.get(k);return p?dlt(st.rateOf(st.byArea.get(k)),pv.rateOf(p),'pts',true):null};
+  $('#areaTbl').innerHTML=`<table><thead><tr><th>Area</th><th class="n">Total</th><th class="n">Done</th><th class="n">Not done</th><th class="n">Cancel</th><th class="n">Rate</th>${pi?`<th class="n">vs ${pi.pname}</th>`:''}</tr></thead><tbody>${areas.map(([k,o])=>{const d=pi&&areaD(k);return `<tr><td>${esc(k)}</td><td class="n">${fmt(o.total)}</td><td class="n">${fmt(o.Completed)}</td><td class="n">${fmt(o['Not completed'])}</td><td class="n">${fmt(o.Cancelled)}</td><td class="n">${rateCell(st.rateOf(o))}</td>${pi?`<td class="n">${d?`<span class="delta ${d.cls}">${d.txt}</span>`:'—'}</td>`:''}</tr>`}).join('')}</tbody></table>`;
   const res=[...st.byRes].sort((a,b)=>b[1].total-a[1].total);
   $('#resSub').textContent=state.map.resource?`Top ${Math.min(15,res.length)} of ${fmt(res.length)} by volume`:'Map a Resource column to see this table';
   $('#resTbl').innerHTML=state.map.resource?`<table><thead><tr><th>Resource</th><th class="n">Total</th><th class="n">Completed</th><th class="n">Not completed</th><th class="n">Cancelled</th><th class="n">Rate</th></tr></thead><tbody>${res.slice(0,15).map(([k,o])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(o.total)}</td><td class="n">${fmt(o.Completed)}</td><td class="n">${fmt(o['Not completed'])}</td><td class="n">${fmt(o.Cancelled)}</td><td class="n">${rateCell(st.rateOf(o))}</td></tr>`).join('')}</tbody></table>`:'';
@@ -626,8 +736,10 @@ function afterLoad(tryFormat){
   const saved=tryFormat&&formats()[state.sig];
   if(saved){state.map=Object.fromEntries(Object.entries(saved.map).filter(([,h])=>h.startsWith('__')||state.headers.includes(h)));state.sg=saved.sg||{};state.rules=saved.rules||state.rules;toast('Saved mapping for this format applied.')}
   else{autoMap();state.sg={}}
-  state.filters={area:'all',month:'all'};
-  rebuild();
+  build();
+  state.filters={area:'all',period:defaultPeriod(),from:'',to:''};
+  autoTitle();
+  renderAll();
 }
 
 /* ---------- sample ---------- */
@@ -661,7 +773,7 @@ async function save(filename,data){
     toast('Downloads are not available in this view. Open the report in claude.ai.');return}
   try{await d.save({filename,data});toast('Saved '+filename)}catch(e){if(e&&e.code==='declined')return;toast(e&&e.code==='rate_limited'?'A save prompt is already open.':'Could not save the file.')}
 }
-const fileStem=()=>($('#rTitle').value.trim()||'INFIUS8 Report').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_')+'_'+dKey(new Date());
+const fileStem=()=>{const s=($('#rTitle').value.trim()||'INFIUS8 Report').replace(/[–—]/g,'-').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_');return current&&current.pi?s:s+'_'+dKey(new Date())};
 
 function chartImg(cfg,w,h){
   const host=$('#offscreen');const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.style.width=w+'px';cv.style.height=h+'px';host.appendChild(cv);
@@ -680,7 +792,8 @@ async function exportPDF(){
   const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'pt',format:'a4'});
   const W=595.28,H=841.89,M=36,CW=W-2*M;const P=LIGHT;
   const font={size:9,family:'helvetica'};const c=cfgs(st,P,font);
-  const title=$('#rTitle').value.trim()||'Operations Report';const by=$('#fBy').value.trim();
+  const title=($('#rTitle').value.trim()||'Operations Report').replace(/[–—]/g,'-');const by=$('#fBy').value.trim();
+  const D=st.deltas||{},pi=st.pi;
   const now=new Date();
   const header=()=>{doc.setFillColor(...rgb('#13212C'));doc.rect(0,0,W,54,'F');
     doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text('INFIUS8',M,30);
@@ -689,35 +802,42 @@ async function exportPDF(){
   const h2=(t,y)=>{doc.setTextColor(...rgb(P.fg));doc.setFont('helvetica','bold');doc.setFontSize(11.5);doc.text(t,M,y)};
   header();
   doc.setTextColor(...rgb(P.fg));doc.setFont('helvetica','bold');doc.setFontSize(19);doc.text(title,M,86);
-  doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...rgb(P.fg2));doc.text($('#rMeta').textContent.replace('–','-'),M,101);
+  doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...rgb(P.fg2));doc.text($('#rMeta').textContent.replace(/[–—]/g,'-'),M,101);
   // KPIs
-  const ks=[['Total activities',fmt(st.total)],['Completion rate',fp(st.rate)],['Completed',fmt(st.groups.Completed)],['Not completed',fmt(st.groups['Not completed'])],['Cancelled',fmt(st.groups.Cancelled)]];
-  const kw=CW/ks.length;let y=114;
-  doc.setDrawColor(...rgb(P.grid));doc.setLineWidth(.7);doc.roundedRect(M,y,CW,52,4,4,'S');
-  ks.forEach(([l,v],i)=>{const x=M+i*kw;if(i)doc.line(x,y,x,y+52);
+  const ks=[['Total activities',fmt(st.total),D.total],['Completion rate',fp(st.rate),D.rate],['Completed',fmt(st.groups.Completed),D.done],['Not completed',fmt(st.groups['Not completed']),D.nd],['Cancelled',fmt(st.groups.Cancelled),D.cx]];
+  const kw=CW/ks.length;let y=114;const kh=pi?66:52;
+  doc.setDrawColor(...rgb(P.grid));doc.setLineWidth(.7);doc.roundedRect(M,y,CW,kh,4,4,'S');
+  ks.forEach(([l,v,d],i)=>{const x=M+i*kw;if(i)doc.line(x,y,x,y+kh);
     doc.setFontSize(7);doc.setTextColor(...rgb(P.fg2));doc.text(l.toUpperCase(),x+10,y+16);
-    doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(...rgb(i===1?P.accent:P.fg));doc.text(v,x+10,y+38);doc.setFont('helvetica','normal')});
+    doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(...rgb(i===1?P.accent:P.fg));doc.text(v,x+10,y+38);
+    if(pi){doc.setFontSize(7.5);doc.setTextColor(...rgb(d?(d.cls==='good'?P.good:d.cls==='bad'?P.crit:P.fg2):P.fg2));doc.text(d?`${d.plain} vs ${pi.pname}${st.cov&&st.cov.prev?'*':''}`:`no data for ${pi.pname}`,x+10,y+54)}
+    doc.setFont('helvetica','normal')});
   // charts row
-  y=188;h2('Status distribution',y);doc.text('Activities by area',M+232,y);
+  y=pi?202:188;h2('Status distribution',y);doc.text('Activities by area',M+232,y);
   c.status.options.plugins.legend.position='bottom';
   doc.addImage(chartImg(c.status,220,190),'PNG',M,y+8,220,190);
   const aH=Math.min(250,Math.max(190,c.areaH*.75));doc.addImage(chartImg(c.area,CW-232,aH),'PNG',M+232,y+8,CW-232,aH);
   y=y+18+Math.max(190,aH);
   if(c.trend){h2(`Trend · activities per ${st.trend.gran}`,y+14);doc.addImage(chartImg(c.trend,CW,170),'PNG',M,y+22,CW,170);y+=200}
   // findings
-  const plain=s=>s.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/[–—]/g,'-');
+  const plain=s=>s.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/[–—]/g,'-').replace(/→/g,'->');
   const list=(items,yy,col)=>{doc.setFont('helvetica','normal');doc.setFontSize(9.5);
     items.forEach(t=>{const lines=doc.splitTextToSize(plain(t),CW-14);if(yy+lines.length*12>H-50){doc.addPage();header();yy=80}
       doc.setFillColor(...rgb(col));doc.circle(M+3,yy-3,1.8,'F');doc.setTextColor(...rgb(P.fg));doc.text(lines,M+12,yy);yy+=lines.length*12+4});return yy};
   doc.addPage();header();y=82;
+  if(c.weekly){h2('Completion rate by area, week by week',y);doc.addImage(chartImg(c.weekly,CW,190),'PNG',M,y+8,CW,190);y+=226}
   h2('Key findings',y);y=list(st.ins.F,y+18,P.accent)+8;
   h2('Needs attention',y);y=list(st.ins.A,y+18,P.crit)+8;
   // area table
   const tStyle={theme:'plain',styles:{font:'helvetica',fontSize:8.5,cellPadding:4,textColor:rgb(P.fg),lineColor:rgb(P.grid),lineWidth:{bottom:.5}},headStyles:{fontStyle:'bold',textColor:rgb(P.fg2),fontSize:7.5},margin:{left:M,right:M,top:70},
-    didDrawPage:()=>{header()},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'},5:{halign:'right'}}};
+    didDrawPage:()=>{header()},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'},5:{halign:'right'},6:{halign:'right'}}};
+  if(y>H-120){doc.addPage();header();y=82}
   h2('Area summary',y);
   const row=([k,o])=>[k,fmt(o.total),fmt(o.Completed),fmt(o['Not completed']),fmt(o.Cancelled),fp(st.rateOf(o))];
-  doc.autoTable({...tStyle,startY:y+8,head:[['Area','Total','Completed','Not completed','Cancelled','Rate']],body:[...st.byArea].sort((a,b)=>b[1].total-a[1].total).map(row)});
+  const pv=st.prev;
+  const arow=e=>{const r=row(e);if(pi){const p=pv&&pv.byArea.get(e[0]);const d=p?dlt(st.rateOf(e[1]),pv.rateOf(p),'pts',true):null;r.push(d?d.plain:'-')}return r};
+  doc.autoTable({...tStyle,startY:y+8,head:[['Area','Total','Completed','Not completed','Cancelled','Rate',...(pi?['vs '+pi.pname]:[])]],body:[...st.byArea].sort((a,b)=>b[1].total-a[1].total).map(arow),
+    didParseCell:h=>{if(pi&&h.section==='body'&&h.column.index===6){const t=String(h.cell.raw);if(t.startsWith('+'))h.cell.styles.textColor=rgb(P.good);else if(t.startsWith('-')&&t!=='-')h.cell.styles.textColor=rgb(P.crit)}}});
   y=doc.lastAutoTable.finalY+26;
   if(y+c.typeH*.7>H-50){doc.addPage();header();y=82}
   h2('Activity types (top 10)',y);const th=Math.min(230,c.typeH*.7);doc.addImage(chartImg(c.type,CW,th),'PNG',M,y+8,CW,th);y+=th+30;
@@ -732,17 +852,24 @@ async function exportPDF(){
   doc.text(doc.splitTextToSize(dq,CW),M,y+16);
   const pages=doc.getNumberOfPages();
   for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(7.5);doc.setTextColor(...rgb(P.fg2));doc.text(`INFIUS8 Auto Report · ${title}`,M,H-22);doc.text(`Page ${i} of ${pages}`,W-M,H-22,{align:'right'})}
-  await save(fileStem()+'.pdf',doc.output('blob'));
+  await save(fileStem()+'.pdf',new Uint8Array(doc.output('arraybuffer')));
   }catch(e){console.error(e);toast('Could not build the PDF.')}finally{btn.disabled=false}
 }
 async function exportXLSX(){
   if(!window.XLSX){toast('Excel tools did not load.');return}
   const st=current;if(!st){return}
-  const rows=filtered();const m=state.map;
+  const pi=st.pi,pv=st.prev;
+  const rows=filtered(pi&&pi.from,pi&&pi.to);const m=state.map;
   const proc=rows.map(r=>({Source:r.src,Row:r.row,ID:r.id,Status:r.status,'Status group':r.group,Area:r.area,Resource:r.resource,'Activity type':r.type,Date:r.date||null,[m.value||'Measure']:r.val,Issues:r.iss.join(', ')}));
   const all=state.recs.filter(r=>r.iss.length).map(r=>({Source:r.src,Row:r.row,ID:r.id,Status:r.status,Area:r.area,Issues:r.iss.join(', ')}));
-  const sum=[['INFIUS8 Auto Report',$('#rTitle').value],['Scope',$('#rMeta').textContent],[],['Total activities',st.total],['Completion rate (%)',+st.rate.toFixed(1)],['Completed',st.groups.Completed],['Not completed',st.groups['Not completed']],['Cancelled',st.groups.Cancelled],['Unclassified status',st.groups.Other],[],['Area','Total','Completed','Not completed','Cancelled','Rate (%)'],
-    ...[...st.byArea].sort((a,b)=>b[1].total-a[1].total).map(([k,o])=>[k,o.total,o.Completed,o['Not completed'],o.Cancelled,+st.rateOf(o).toFixed(1)])];
+  const P2=pv?[pi.plabel]:[];const pvv=f=>pv?[f(pv)]:[];
+  const kr=(l,f)=>[l,f(st),...pvv(f)];
+  const sum=[['INFIUS8 Auto Report',$('#rTitle').value],['Scope',$('#rMeta').textContent],[],['Metric',pi?pi.label:'Selected data',...P2],
+    kr('Total activities',s=>s.total),kr('Completion rate (%)',s=>+s.rate.toFixed(1)),kr('Completed',s=>s.groups.Completed),kr('Not completed',s=>s.groups['Not completed']),kr('Cancelled',s=>s.groups.Cancelled),kr('Unclassified status',s=>s.groups.Other),[],
+    ['Area','Total','Completed','Not completed','Cancelled','Rate (%)',...(pv?['Rate '+pi.pname+' (%)','Change (pts)']:[])],
+    ...[...st.byArea].sort((a,b)=>b[1].total-a[1].total).map(([k,o])=>{const r=[k,o.total,o.Completed,o['Not completed'],o.Cancelled,+st.rateOf(o).toFixed(1)];
+      if(pv){const p=pv.byArea.get(k);r.push(p?+pv.rateOf(p).toFixed(1):null,p?+(st.rateOf(o)-pv.rateOf(p)).toFixed(1):null)}return r})];
+  if(st.weekly){sum.push([],['Completion rate by week (%)',...st.weekly.labels]);st.weekly.series.forEach(s=>sum.push([s.name,...s.vals]))}
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'Summary');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(proc,{cellDates:true}),'Processed data');
@@ -765,9 +892,18 @@ $('#sg').addEventListener('change',ev=>{const s=ev.target;if(s.dataset.sv==null)
 $('#ruleDup').addEventListener('change',e=>{state.rules.dup=e.target.checked;saveFormat();renderVal();renderReport()});
 $('#ruleCancel').addEventListener('change',e=>{state.rules.cancel=e.target.checked;saveFormat();renderReport()});
 $('#fArea').addEventListener('change',e=>{state.filters.area=e.target.value;renderReport()});
-$('#fMonth').addEventListener('change',e=>{state.filters.month=e.target.value;renderReport()});
+$('#fPeriod').addEventListener('change',e=>{const F=state.filters;const prevPi=periodInfo();F.period=e.target.value;
+  if(F.period==='custom'){
+    if(prevPi){F.from=dKey(prevPi.from);F.to=dKey(addDays(prevPi.to,-1))}
+    else{const ds=state.recs.filter(r=>r.date).map(r=>r.date);if(ds.length){let mn=ds[0],mx=ds[0];ds.forEach(d=>{if(d<mn)mn=d;if(d>mx)mx=d});F.from=dKey(mn);F.to=dKey(mx)}}
+    $('#fFrom').value=F.from;$('#fTo').value=F.to}
+  $('#customBox').hidden=F.period!=='custom';autoTitle();renderReport()});
+['#fFrom','#fTo'].forEach(id=>$(id).addEventListener('change',()=>{state.filters.from=$('#fFrom').value;state.filters.to=$('#fTo').value;
+  if(state.filters.from&&state.filters.to&&state.filters.to<state.filters.from){toast('The end date is before the start date.');return}
+  autoTitle();renderReport()}));
 $('#fBy').value=ls.get('i8ar.by','');$('#fBy').addEventListener('change',e=>ls.set('i8ar.by',e.target.value));
-$('#rTitle').addEventListener('change',()=>{if(!$('#rTitle').value.trim())$('#rTitle').value='OFSC Operations Report'});
+$('#rTitle').addEventListener('input',()=>{state.titleAuto=false});
+$('#rTitle').addEventListener('change',()=>{if(!$('#rTitle').value.trim()){state.titleAuto=true;autoTitle()}});
 $('#pdfBtn').addEventListener('click',exportPDF);
 $('#xlsxBtn').addEventListener('click',exportXLSX);
 function setPresent(on){document.body.classList.toggle('present',on);$('#presentBtn span').textContent=on?'Exit presentation':'Present';
