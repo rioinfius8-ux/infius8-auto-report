@@ -1,17 +1,11 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>INFIUS8 Auto Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
 /* Layout: operations console — sticky command bar, setup panels (import → mapping → validation) above a boss-ready report sheet */
 :root{
-  color-scheme:light;
   --bg:#EEF2F4; --surface:#FFFFFF; --sunken:#F5F8F9; --ink:#13212C; --ink-2:#4B5B68; --ink-3:#7A8894; --line:#D7DFE4;
   --accent:#0A7480; --accent-ink:#FFFFFF; --accent-soft:#DDF0F1;
   --good:#2C8A57; --crit:#C2453B; --warn:#B9800C; --muted:#8B98A4;
@@ -35,6 +29,7 @@ html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!i
   --c1:#3CB3BE; --c2:#EE8C55; --c3:#8C8FF0; --c4:#E07AB0; --c5:#9BC75A; --c6:#C9A464;
   --bar:#0A1014; --bar-ink:#E4EBEF; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
 h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
 button,select,input{font:inherit;color:inherit}
@@ -108,6 +103,7 @@ td .delta{margin:0}
 .rules{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:13px}
 .rules label{display:flex;gap:6px;align-items:center;cursor:pointer}
 .rules input{accent-color:var(--accent)}
+.rules select{padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font:inherit;font-size:12.5px}
 .sg-wrap{margin-top:16px}
 .sg-wrap h3{font-size:14px;margin-bottom:8px}
 .sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
@@ -132,8 +128,13 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f
 /* report sheet */
 .report{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .rhead{padding:20px 22px 16px;border-bottom:1px solid var(--line);display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
-.rhead .t{flex:1;min-width:240px;display:flex;flex-direction:column;gap:4px}
-.rtitle{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.015em;border:0;background:transparent;padding:0;width:100%;border-bottom:1px dashed transparent}
+.rhead .t{flex:1 1 100%;min-width:0;display:flex;flex-direction:column;gap:4px}
+.title-wrap{display:flex;align-items:flex-start;gap:8px}.title-wrap .rtitle{flex:1;min-width:0}
+.title-edit{color:var(--ink-3);font-size:16px;margin-top:6px;pointer-events:none}
+.title-wrap:hover .rtitle{border-bottom-color:var(--line)}
+.title-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.linkbtn{border:0;background:none;color:var(--accent);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:0;text-decoration:underline}
+.rtitle{resize:none;overflow:hidden;field-sizing:content;line-height:1.2;color:inherit;display:block;font-family:var(--f-display);font-weight:800;font-size:clamp(20px,4.6vw,26px);letter-spacing:-.015em;border:0;background:transparent;padding:0;width:100%;border-bottom:1px dashed transparent}
 .rtitle:hover,.rtitle:focus{border-bottom-color:var(--line);outline:none}
 .rmeta{color:var(--ink-2);font-size:13px}
 .filters{display:flex;gap:10px;flex-wrap:wrap}
@@ -171,18 +172,141 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f
 .rate .mb i{display:block;height:100%}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-2)}
 
+.tabs{display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;padding:10px 14px 0;border-bottom:1px solid var(--line);background:var(--sunken)}
+.tab{border:0;background:none;cursor:pointer;padding:10px 14px 11px;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;color:var(--ink-2);text-align:left}
+.tab .tk{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.tab .tn{font-family:var(--f-display);font-weight:700;font-size:15px;white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);background:var(--surface);border-radius:8px 8px 0 0}
+.tab[aria-selected="true"] .tk{color:var(--accent)}
+.duty{font-size:12.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.duty b{font-weight:600;color:var(--ink)}
+.duty span.pill{border:1px solid var(--line);border-radius:999px;padding:2px 9px;background:var(--sunken)}
+.inline-set{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2)}
+.inline-set input{width:64px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-variant-numeric:tabular-nums}
+.rates{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px;margin-top:8px}
+.rate-row{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:12.5px;min-width:0}
+.rate-row span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rate-row input{width:90px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);text-align:right;font-variant-numeric:tabular-nums}
+.card-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;justify-content:space-between}
+.age{font-family:var(--f-mono);font-size:12px}
+.age.od{color:var(--crit);font-weight:600}
+tr.total td{font-weight:700;border-top:1.5px solid var(--ink-3)}
+.tix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-top:10px}
+.tix>div{padding:14px 16px;border-right:1px solid var(--line);min-width:0;display:flex;flex-direction:column;gap:4px}
+.tix>div:last-child{border-right:0}
+.tix .l{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);font-weight:600}
+.tix .v{font-family:var(--f-display);font-weight:700;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.tix .s{font-size:12px;color:var(--ink-2)}
+.tix ol{margin:6px 0 0;padding-left:18px;font-size:12.5px;display:flex;flex-direction:column;gap:3px}
+.tix ol li span{color:var(--ink-3);font-family:var(--f-mono);font-size:11.5px;margin-left:4px}
+@media (max-width:760px){.tix{grid-template-columns:repeat(2,minmax(0,1fr))}.tix>div:nth-child(2){border-right:0}.tix>div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+.sub-det{margin-top:12px}
+.sub-det>summary{cursor:pointer;font-size:12.5px;color:var(--ink-2);font-weight:600}
+.dep-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:22px;margin-top:10px}
+@media (max-width:860px){.dep-grid{grid-template-columns:1fr}}
+.toptech{border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;background:var(--sunken);min-width:0}
+.toptech h4{margin:0 0 6px;font-size:13px;font-family:var(--f-display)}
+.toptech ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.toptech li b{font-weight:600}
+.toptech li .m{display:block;font-size:11.5px;color:var(--ink-3)}
+.toptech li .p{font-family:var(--f-mono);font-weight:600;color:var(--good);margin-left:6px}
+.roster-set{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:12px 0}
+.h4{margin:0 0 6px;font-size:13px;font-family:var(--f-display)}
+.dep-areas{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px;align-items:start;margin-bottom:18px}
+.dep-area{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;min-width:0;background:var(--surface)}
+.da-h{display:flex;align-items:center;gap:6px;background:var(--bar);color:var(--bar-ink);padding:6px 10px}
+.da-h input{flex:1;min-width:0;border:0;background:transparent;color:inherit;font-family:var(--f-display);font-weight:800;font-size:15px;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:4px}
+.da-h input:focus{outline:1px dashed rgba(255,255,255,.5)}
+.da-h .x{color:var(--bar-ink);opacity:.7}
+.dep-area .da-h input[type=text],.dep-area .da-h input[type=text]:focus,.dep-area .da-h input[type=text]:hover{color:var(--bar-ink);background:transparent;border-color:transparent;font-size:15px}
+.dep-area .da-h input[type=text]:focus{outline:1px dashed var(--bar-ink)}
+.da-tl{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--accent-soft);border-bottom:1px solid var(--line);font-size:12.5px;font-weight:700}
+.da-tl input{flex:1;min-width:0}
+.dep-area input[type=text],.dep-area select{width:100%;border:1px solid transparent;background:transparent;border-radius:5px;padding:4px 6px;font-size:12.5px;color:var(--ink)}
+.dep-area input[type=text]:hover,.dep-area select:hover{border-color:var(--line)}
+.dep-area input[type=text]:focus,.dep-area select:focus{border-color:var(--accent);background:var(--surface)}
+.da-t{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+.da-t col.c-st{width:96px}.da-t col.c-x{width:28px}.da-t col.c-p{width:30%}
+.da-t th{font-size:10.5px;padding:6px 8px}
+.da-t td{padding:2px 4px;border-bottom:1px solid var(--line)}
+.da-t td.stc{width:112px}
+.da-t select{font-weight:600}
+.da-t tr.s-DTY td:first-child{box-shadow:inset 3px 0 var(--good)}
+.da-t tr.s-STDBY td:first-child{box-shadow:inset 3px 0 var(--c3)}
+.da-t tr.s-RD td:first-child{box-shadow:inset 3px 0 var(--muted)}
+.da-t tr.s-LEAVE td:first-child{box-shadow:inset 3px 0 var(--c4)}
+.da-t tr.s-ABSENT td:first-child{box-shadow:inset 3px 0 var(--crit)}
+.da-t tr.s-HALF td:first-child{box-shadow:inset 3px 0 var(--warn)}
+.da-t tr.s-ABSENT select{color:var(--crit)}.da-t tr.s-DTY select{color:var(--good)}
+.da-add{display:flex;gap:8px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--line)}
+.da-add .btn{padding:5px 10px;font-size:12px}
+.da-add details{flex:1 1 100%}
+.da-add summary{cursor:pointer;font-size:12px;color:var(--ink-2)}
+.da-add textarea{width:100%;margin-top:6px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font:inherit;font-size:12.5px;resize:vertical}
+.da-sum{padding:8px 10px 10px}
+.da-sum .sh{background:var(--bar);color:var(--bar-ink);text-align:center;font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:5px;border-radius:5px 5px 0 0}
+.da-sum table{font-size:12.5px}
+.da-sum td{padding:4px 8px}
+.da-sum .top{margin-top:6px;font-size:12px;color:var(--ink-2)}
+.da-sum .top b{color:var(--ink)}
+.empty-row{padding:10px;font-size:12.5px;color:var(--ink-3)}
+.dep-date{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px}
+.dd{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13px}
+.dd input{padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font:inherit;font-weight:600;font-variant-numeric:tabular-nums}
+.dd-nav{display:inline-flex;gap:4px}.dd-nav .btn{padding:6px 10px}
+.dd-state{font-size:12px}
+.dd-banner{margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-size:13px}
+.spacer{flex:1}
+label.btn{cursor:pointer}
+.attn{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+.attn table td.code{font-family:var(--f-mono);font-size:11px;text-align:center;padding:5px 4px;font-weight:600}
+.attn table th.dcol{text-align:center;padding:6px 4px;font-size:10px}
+.code.c-DTY{color:var(--good)}.code.c-STDBY{color:var(--c3)}.code.c-RD{color:var(--muted)}.code.c-LEAVE{color:var(--c4)}.code.c-ABSENT{color:var(--crit);background:color-mix(in srgb,var(--crit) 12%,transparent)}.code.c-HALF{color:var(--warn)}.code.c-none{color:var(--ink-3);font-weight:400}
+.st{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.st.good{color:var(--good)}.st.warn{color:var(--warn)}.st.crit{color:var(--crit)}.st.neu{color:var(--ink-3)}
+.kpi.alert .v{color:var(--crit)}.kpi.good .v{color:var(--good)}
+.sec{border-top:1px solid var(--line);padding-top:20px;display:flex;flex-direction:column;gap:14px}
+.sec-h{display:flex;flex-direction:column;gap:2px}
+.sec-h .eb{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.sec-h h3{font-size:21px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
+@media (max-width:900px){.two{grid-template-columns:1fr}}
+textarea.note{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font:inherit;font-size:13.5px;resize:vertical;color:var(--ink)}
+.keyins{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 14px;border-radius:0 8px 8px 0;font-size:13.5px;max-width:90ch}
+.keyins b{font-weight:700}
+.ed-t input,.ed-t select,.ed-t textarea{width:100%;padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font:inherit;font-size:12.5px;color:var(--ink)}
+.ed-t textarea{resize:vertical;min-height:34px}
+.ed-t td{vertical-align:top;padding:5px 6px}
+.ed-t input[type=number]{text-align:right;font-variant-numeric:tabular-nums;max-width:110px}
+.mini-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.mini-kpis div{flex:1 1 120px;border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.mini-kpis .l{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);font-weight:600}
+.mini-kpis .v{font-family:var(--f-display);font-weight:700;font-size:24px;font-variant-numeric:tabular-nums}
+.ev-good{color:var(--good)}.ev-bad{color:var(--crit)}.ev-mid{color:var(--warn)}
+.pg-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 6px}
+.pg-tools input[type=search]{flex:1 1 220px;min-width:0;padding:6px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font:inherit;font-size:13px;color:var(--ink)}
+.pg-tools select{padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font:inherit;font-size:13px;color:var(--ink)}
+.pg-nav{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:8px;font-size:12.5px;color:var(--ink-2)}
+.pg-nav .btn{padding:5px 10px}
+.nd-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:10px}
+.nd-sum h4{margin:0 0 4px;font-size:12.5px;font-family:var(--f-display)}
+.nd-sum td{padding:4px 8px}
+.bar-i{display:inline-block;height:6px;border-radius:3px;background:var(--crit);vertical-align:middle;margin-left:6px;opacity:.8}
+.up-import{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.up-card .kpis{margin-top:12px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:9px 16px;border-radius:8px;font-size:13px;z-index:50;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.2)}
 .busy{opacity:.6;pointer-events:none}
 #offscreen{position:fixed;left:-10000px;top:0;width:1200px}
 
 body.present .setup{display:none}
+.pres-only{display:none}body.present .pres-only{display:inline}
 body.present .wrap{max-width:1400px}
 body.present .rtitle{font-size:32px}
 body.present .kpi .v{font-size:34px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
-</head>
-<body>
+
 <div class="bar"><div class="bar-in">
   <div class="brand"><b>INFIUS8</b><span>Auto Report</span></div>
   <button class="btn" id="presentBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/></svg><span>Present</span></button>
@@ -223,8 +347,18 @@ body.present .kpi .v{font-size:34px}
     <div class="map-grid" id="mapGrid"></div>
     <div class="rules">
       <label><input type="checkbox" id="ruleDup" checked> Exclude duplicate IDs from totals</label>
+      <label for="wkStartSel">Report week <select id="wkStartSel"><option value="0">Sunday to Saturday</option><option value="1">Monday to Sunday</option></select></label>
       <label><input type="checkbox" id="ruleOpen" checked> Exclude open (pending, started, suspended) from completion rate</label>
       <label><input type="checkbox" id="ruleCancel"> Exclude cancelled from completion rate</label>
+    </div>
+    <div class="sg-wrap"><h3>Area names</h3><p class="small" style="margin:0 0 8px">How each area name in your files appears in the report. "I8 PRWAR" prefixes are removed and MPX Subcon counts as CamSur. Type a different name to change it.</p><div class="sg" id="areaMapBox"></div></div>
+    <div class="sg-wrap"><h3>Ticket types: RPR and AFD</h3><p class="small" style="margin:0 0 8px">A ticket counts as RPR or AFD when this column contains one of the words. Separate words with commas. AFD is checked first.</p>
+      <div class="map-grid">
+        <div class="field"><label for="tcCol">Look in column</label><select id="tcCol"></select></div>
+        <div class="field"><label for="tcRpr">RPR words</label><input type="text" id="tcRpr"></div>
+        <div class="field"><label for="tcAfd">AFD (after sale) words</label><input type="text" id="tcAfd"></div>
+      </div>
+      <div class="small" id="tcHint" style="margin-top:6px"></div>
     </div>
     <div class="sg-wrap"><h3>Status groups</h3><p class="small" style="margin:0 0 8px">How each status value counts in the report.</p><div class="sg" id="sg"></div></div>
   </details>
@@ -236,20 +370,194 @@ body.present .kpi .v{font-size:34px}
   </section>
 
   <section class="report" id="report" aria-label="Report">
+    <div class="tabs" role="tablist" aria-label="Report type">
+      <button class="tab" role="tab" type="button" data-tab="ops" id="tab-ops" aria-controls="pane-ops"><span class="tk">PC 1</span><span class="tn">Operations</span></button>
+      <button class="tab" role="tab" type="button" data-tab="bill" id="tab-bill" aria-controls="pane-bill"><span class="tk">PC 2</span><span class="tn">Billing &amp; Docs</span></button>
+      <button class="tab" role="tab" type="button" data-tab="kpi" id="tab-kpi" aria-controls="pane-kpi"><span class="tk">PC 3</span><span class="tn">PMO · KPI</span></button>
+      <button class="tab" role="tab" type="button" data-tab="pmo" id="tab-pmo" aria-controls="pane-pmo"><span class="tk">Executive</span><span class="tn">Weekly PMO Update</span></button>
+    </div>
     <div class="rhead">
       <div class="t">
         <span class="step">Report</span>
-        <input class="rtitle" id="rTitle" type="text" value="OFSC Operations Report" aria-label="Report title">
+        <div class="title-wrap"><textarea class="rtitle" id="rTitle" rows="1" aria-label="Report title, click to rename">OFSC Operations Report</textarea><span class="title-edit setup" aria-hidden="true">✎</span></div>
+        <div class="title-tools setup"><span class="small">Click the title to rename this report. The date updates by itself.</span><button class="linkbtn" type="button" id="titleReset" hidden>Reset title</button></div>
         <div class="rmeta" id="rMeta"></div>
       </div>
       <div class="filters">
         <div class="field"><label for="fArea">Area</label><select id="fArea"></select></div>
+        <div class="field"><label for="fWf">Workforce</label><select id="fWf"><option value="all">In-house + Subcon</option><option value="In-house">In-house only</option><option value="Subcon">Subcon only</option></select></div>
         <div class="field"><label for="fPeriod">Period</label><select id="fPeriod"></select></div>
         <div class="field" id="customBox" hidden><label for="fFrom">From – to</label><div class="range"><input type="date" id="fFrom" aria-label="From date"><input type="date" id="fTo" aria-label="To date"></div></div>
         <div class="field setup"><label for="fBy">Prepared by</label><input type="text" id="fBy" placeholder="Your name"></div>
       </div>
     </div>
-    <div class="rbody" id="rbody">
+    <div class="rbody" id="pane-ops" role="tabpanel" aria-labelledby="tab-ops" hidden>
+      <div class="duty"><b>PC 1 · Project Operations</b><span class="pill">Daily Operations Report</span><span class="pill">Pending Issues List</span><span class="pill">Project Status Update</span></div>
+      <div class="kpis" id="opsKpis"></div>
+      <div class="card"><div class="card-h"><h3>Ticket status</h3><span class="small" id="tixSub"></span></div>
+        <div class="tix" id="tixBox"></div>
+        <details class="sub-det"><summary class="small">Ticket status by area</summary><div class="tbl" id="tixAreaTbl"></div></details>
+      </div>
+      <div class="card"><div class="card-h"><h3>In-house deployment</h3><span class="small" id="depSub"></span></div>
+        <div class="dep-date">
+          <label class="dd" for="depDate"><span>Date</span><input type="date" id="depDate"></label>
+          <div class="dd-nav setup"><button class="btn" type="button" id="depPrev" aria-label="Previous day">‹</button><button class="btn" type="button" id="depToday">Today</button><button class="btn" type="button" id="depNext" aria-label="Next day">›</button></div>
+          <span class="dd-state" id="depState"></span>
+        </div>
+        <div class="dd-banner setup" id="depBanner" hidden></div>
+        <div class="roster-set setup">
+          <button class="btn" type="button" id="depAddArea">Add area</button>
+          <button class="btn" type="button" id="rosterAllDuty">Set everyone to DTY</button>
+          <label class="inline-set" for="depPer">Technicians per team <input type="number" id="depPer" min="1" max="10" value="2"></label>
+          <span class="spacer"></span>
+          <button class="btn" type="button" id="depExport">Export history</button>
+          <label class="btn" for="depImport">Import history<input type="file" id="depImport" accept=".xlsx,.xls" hidden></label>
+        </div>
+        <div class="dep-areas" id="depAreas"></div>
+        <div class="dep-grid">
+          <div><h4 class="h4" id="depAllH">Summary · all areas</h4><div class="tbl" id="depTbl"></div></div>
+          <div class="toptech"><h4>Top technicians</h4><ol id="topTech"></ol><div class="small" id="topTechSub"></div></div>
+        </div>
+        <div class="attn">
+          <div class="card-h"><h4 class="h4">Attendance history</h4>
+            <label class="inline-set" for="attArea">Area <select id="attArea"></select></label></div>
+          <div class="small" id="attSub"></div>
+          <div class="tbl" id="attTbl"></div>
+        </div>
+      </div>
+      <div class="charts">
+        <div class="card wide"><h3>Daily accomplishment</h3><div class="small" id="opsDailySub"></div><div class="cbox" style="height:260px"><canvas id="chDaily"></canvas></div></div>
+        <div class="card"><div class="card-h"><h3>Open backlog by age</h3><label class="inline-set setup" for="odDays">Overdue after <input type="number" id="odDays" min="1" max="90" step="1" value="3"> days</label></div><div class="small" id="opsAgeSub"></div><div class="cbox" style="height:240px"><canvas id="chAging"></canvas></div></div>
+        <div class="card"><h3>Project status by area</h3><div class="small" id="opsAreaSub"></div><div class="tbl" id="opsAreaTbl"></div></div>
+      </div>
+      <div class="insights">
+        <div><h3 style="font-size:15px">Operations summary</h3><ul id="opsFind"></ul></div>
+        <div class="att"><h3 style="font-size:15px">Escalate / follow up</h3><ul id="opsAtt"></ul></div>
+      </div>
+      <div class="charts">
+        <div class="card wide"><div class="card-h"><h3>Pending issues list</h3><span class="small" id="opsPendSub"></span></div><div id="opsPendTbl"></div></div>
+        <div class="card wide"><h3>Manpower and workload</h3><div class="small" id="opsResSub"></div><div class="tbl" id="opsResTbl"></div></div>
+      </div>
+    </div>
+    <div class="rbody" id="pane-bill" role="tabpanel" aria-labelledby="tab-bill" hidden>
+      <div class="duty"><b>PC 2 · Documentation, Billing &amp; Client Requirements</b><span class="pill">Billing Tracker</span><span class="pill">Validation Report</span><span class="pill">Billing Summary</span><span class="pill">Client Compliance Checklist</span></div>
+      <div class="kpis" id="billKpis"></div>
+      <div class="charts">
+        <div class="card wide"><h3>Completed tickets per week</h3><div class="small" id="billWeekSub"></div><div class="cbox" style="height:260px"><canvas id="chBillWeek"></canvas></div></div>
+        <div class="card wide"><h3>Billing summary by activity type</h3><div class="small" id="billTypeSub"></div><div class="tbl" id="billTypeTbl"></div></div>
+        <div class="card"><h3>Billing summary by area</h3><div class="small">Completed tickets in this period</div><div class="tbl" id="billAreaTbl"></div></div>
+        <div class="card"><h3>Validation and compliance check</h3><div class="small">Completed tickets missing what billing needs</div><div class="tbl" id="billCompTbl"></div></div>
+      </div>
+      <div class="insights">
+        <div><h3 style="font-size:15px">Billing summary</h3><ul id="billFind"></ul></div>
+        <div class="att"><h3 style="font-size:15px">For validation / dispute</h3><ul id="billAtt"></ul></div>
+      </div>
+      <div class="charts">
+        <div class="card wide"><div class="card-h"><h3>Rejected and not done tickets</h3><span class="small" id="billNdSub"></span></div><div class="nd-sum" id="billNdSum"></div><details class="sub-det" id="billNdDet"><summary>Show the ticket list</summary><div id="billNdTbl"></div></details></div>
+        <div class="card wide up-card"><div class="card-h"><h3>Unpaid tickets · find the problem, get the solution</h3><span class="small" id="upSub"></span></div>
+          <div class="up-import setup"><label class="btn" for="upFile">Import billing tracker<input type="file" id="upFile" accept=".xlsx,.xls,.xlsm,.csv" hidden></label><span class="small" id="upFileName"></span><button class="linkbtn" type="button" id="upClear" hidden>Remove</button></div>
+          <details class="sub-det setup" id="upSetup" hidden><summary>Billing tracker columns and payment status</summary><div class="map-grid" id="upMap"></div><h4 class="h4" style="margin-top:12px">Payment status groups</h4><div class="sg" id="upGroups"></div></details>
+          <div class="empty" id="upEmpty" style="text-align:left;padding:14px 0">Import your billing tracker or payment report (Excel or CSV) with the <b>ticket ID</b> and <b>payment status</b>. The system matches it with the completed tickets of this period, finds the unpaid ones, and tells you the problem and the next step for each. Rejection remarks and amounts are used when the file has them.</div>
+          <div id="upBody" hidden>
+            <div class="kpis" id="upKpis"></div>
+            <div class="two" style="margin-top:14px"><div><h4 class="h4">Problems and solutions</h4><div class="tbl" id="upProbTbl"></div></div><div><h4 class="h4">Unpaid tickets by problem</h4><div class="cbox" style="height:240px"><canvas id="chUp"></canvas></div></div></div>
+            <details class="sub-det"><summary>Show unpaid tickets</summary><div id="upList"></div></details>
+          </div>
+        </div>
+        <div class="card wide setup"><h3>Rate card</h3><div class="small">Price per completed activity, in pesos. Leave blank to count tickets only. Saved on this device.</div><div class="rates" id="rates"></div></div>
+      </div>
+    </div>
+    <div class="rbody" id="pane-pmo" role="tabpanel" aria-labelledby="tab-pmo" hidden>
+      <div class="duty"><b>Executive PMO Update</b><span class="pill" id="pmoWeekPill"></span><span class="small" id="pmoNote"></span></div>
+      <div class="roster-set setup">
+        <label class="inline-set" for="tgCt">Weekly target, completed tickets <input type="number" id="tgCt" min="1" step="1"></label>
+        <label class="inline-set" for="tgEff">Efficiency target <input type="number" id="tgEff" min="0.1" step="0.05"></label>
+      </div>
+
+      <section class="sec" aria-labelledby="h-exec">
+        <div class="sec-h"><span class="eb">Executive</span><h3 id="h-exec">Executive Summary</h3></div>
+        <div class="kpis" id="pmoKpis"></div>
+        <div class="field"><label for="w_ceo">CEO focus for the week</label><textarea class="note" id="w_ceo" data-wk="ceo" rows="2" placeholder="e.g. Restore deployment capacity, reduce CamSur and Albay backlog, and maintain daily escalation."></textarea></div>
+      </section>
+
+      <section class="sec" aria-labelledby="h-perf">
+        <div class="sec-h"><span class="eb">Performance</span><h3 id="h-perf">Weekly Performance</h3></div>
+        <div class="two">
+          <div class="card"><h4 class="h4">Completed tickets and efficiency</h4><div class="small" id="perfSub"></div><div class="cbox" style="height:280px"><canvas id="chPerf"></canvas></div><div class="tbl" id="perfTbl"></div></div>
+          <div class="card"><h4 class="h4">Weekly deployment by area</h4><div class="small">Teams deployed per week (duty days × team share)</div><div class="cbox" style="height:280px"><canvas id="chDepW"></canvas></div><div class="tbl" id="depWTbl"></div></div>
+        </div>
+      </section>
+
+      <section class="sec" aria-labelledby="h-pipe">
+        <div class="sec-h"><span class="eb">Pipeline</span><h3 id="h-pipe">Extracted Tickets</h3></div>
+        <div class="two">
+          <div class="card"><h4 class="h4">Extracted tickets per week</h4><div class="small">Stacked by area</div><div class="cbox" style="height:280px"><canvas id="chExt"></canvas></div></div>
+          <div class="card"><h4 class="h4" id="extBrH">Area breakdown</h4><div class="tbl" id="extTbl"></div></div>
+        </div>
+        <div class="insights">
+          <div><h3 style="font-size:15px">Remarks</h3><ul id="pipeRem"></ul></div>
+          <div class="att"><h3 style="font-size:15px">Risks / points to watch</h3><ul id="pipeRisk"></ul></div>
+        </div>
+        <div class="field"><label for="w_focus">Management focus</label><textarea class="note" id="w_focus" data-wk="focus" rows="2" placeholder="e.g. Monitor CamSur and Albay capacity against the highest workload concentration."></textarea></div>
+      </section>
+
+      <section class="sec" aria-labelledby="h-cap">
+        <div class="sec-h"><span class="eb">Operations</span><h3 id="h-cap">Deployment Capacity vs. Completed Output</h3></div>
+        <div class="two">
+          <div class="card"><h4 class="h4">Average deployment</h4><div class="small">Total teams in the roster vs average teams on duty per day</div><div class="cbox" style="height:260px"><canvas id="chCapTeams"></canvas></div></div>
+          <div class="card"><h4 class="h4">Average completed tickets</h4><div class="small">Target per day (total teams × efficiency target) vs average in-house completed per day</div><div class="cbox" style="height:260px"><canvas id="chCapCt"></canvas></div></div>
+        </div>
+        <div class="keyins" id="capIns"></div>
+      </section>
+
+      <section class="sec" aria-labelledby="h-qa">
+        <div class="sec-h"><span class="eb">Quality and safety</span><h3 id="h-qa">Quality Assurance Inspection</h3></div>
+        <div class="two">
+          <div class="card"><h4 class="h4">Inspections this week</h4><div class="tbl" id="qaIn"></div></div>
+          <div class="card"><div class="mini-kpis" id="qaTot"></div><div class="cbox" style="height:230px"><canvas id="chQa"></canvas></div></div>
+        </div>
+        <div class="field"><label for="w_qaRec">Operation recommendation</label><textarea class="note" id="w_qaRec" data-wk="qaRec" rows="2"></textarea></div>
+      </section>
+
+      <section class="sec" aria-labelledby="h-ppe">
+        <div class="sec-h"><span class="eb">Quality and safety</span><h3 id="h-ppe">PPE Compliance Summary</h3></div>
+        <div class="two">
+          <div class="card"><h4 class="h4">PPE inspections this week</h4><div class="tbl" id="ppeIn"></div></div>
+          <div class="card"><h4 class="h4">PPE inspection results</h4><div class="cbox" style="height:250px"><canvas id="chPpe"></canvas></div></div>
+        </div>
+        <div class="field"><label for="w_ppeRem">Remarks</label><textarea class="note" id="w_ppeRem" data-wk="ppeRem" rows="2"></textarea></div>
+      </section>
+
+      <section class="sec" aria-labelledby="h-fuel">
+        <div class="sec-h"><span class="eb">Fuel</span><h3 id="h-fuel">Fuel Consumption Report</h3></div>
+        <div class="small">Liters per completed ticket. Enter this week's actual for each group; the chart shows the last 6 weeks you entered.</div>
+        <div class="tbl" id="fuelIn"></div>
+        <div class="two" id="fuelCharts"></div>
+      </section>
+
+      <section class="sec" aria-labelledby="h-mon">
+        <div class="sec-h"><span class="eb">Monitoring</span><h3 id="h-mon">Monitoring and Performance Evaluation</h3></div>
+        <div class="tbl" id="monTbl"></div>
+        <div class="keyins" id="monMeasure"></div>
+      </section>
+
+      <section class="sec" aria-labelledby="h-pri">
+        <div class="sec-h"><span class="eb">Action plan</span><h3 id="h-pri">Strategic Priorities</h3></div>
+        <div class="tbl" id="priTbl"></div>
+        <div class="field"><label for="w_expected">Expected result</label><textarea class="note" id="w_expected" data-wk="expected" rows="2" placeholder="e.g. A controlled recovery toward the 600-ticket and 2.00-efficiency targets."></textarea></div>
+      </section>
+
+      <section class="sec" aria-labelledby="h-health">
+        <div class="sec-h"><span class="eb">Operations</span><h3 id="h-health">Ticket Health by Area</h3></div>
+        <div class="two">
+          <div class="card"><div class="small" id="healthSub"></div><div class="tbl" id="healthTbl"></div></div>
+          <div class="card"><h4 class="h4">Unhandled-ticket share</h4><div class="cbox" style="height:240px"><canvas id="chHealth"></canvas></div></div>
+        </div>
+        <div class="keyins" id="healthFocus"></div>
+      </section>
+    </div>
+    <div class="rbody" id="pane-kpi" role="tabpanel" aria-labelledby="tab-kpi">
+      <div class="duty"><b>PC 3 · PMO Governance &amp; Performance</b><span class="pill">Weekly KPI Dashboard</span><span class="pill">Monthly PMO Report</span><span class="pill">Risk Register</span><span class="pill">Action Tracker</span></div>
       <div class="kpis" id="kpis"></div>
       <div class="charts">
         <div class="card"><h3>Status distribution</h3><div class="small" id="cs1"></div><div class="cbox" style="height:240px"><canvas id="chStatus"></canvas></div><div class="statuslist" id="statusList"></div></div>
@@ -303,16 +611,20 @@ const ROLES=[
  {key:'resource',label:'Resource / technician',kw:[/resource/,/technician/,/\btech/,/crew/,/installer/,/assigned/]},
  {key:'type',label:'Activity type',kw:[/activity\s*type/,/job\s*type/,/work\s*type/,/\btype\b/,/category/,/service/]},
  {key:'date',label:'Date',kw:[/\bdate\b/,/date/,/start/,/created/,/completed/,/\bday\b/,/time/]},
+ {key:'reason',label:'Reason / remarks (for RPR, AFD)',kw:[/reason/,/cause/,/remark/,/resolution/,/fault/,/trouble/,/problem/,/diagnos/,/finding/,/notes?\b/]},
  {key:'value',label:'Measure (number)',kw:[/duration/,/amount/,/cost/,/hours?\b/,/minutes?/,/travel/,/qty|quantity/,/total/]}
 ];
 
-const state={files:[],map:{},sg:{},rules:{dup:true,cancel:false,open:true},sample:true,filters:{area:'all',period:'all',from:'',to:''},titleAuto:true,recs:[],val:null,prof:{},headers:[],sig:''};
+const state={files:[],map:{},sg:{},rules:{dup:true,cancel:false,open:true,overdue:3},tab:ls.get('i8ar.tab','ops'),sample:true,filters:{area:'all',period:'all',from:'',to:''},titleAuto:true,recs:[],val:null,prof:{},headers:[],sig:''};
 let charts={};
 
 /* ---------- periods ---------- */
 const DAY=864e5;
 const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
-const weekStart=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
+let WSD=(()=>{const v=ls.get('i8ar.wkstart',0);return v===1?1:0})();
+const weekStart=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()-WSD+7)%7));return x};
+const weekNo=ws=>isoWeek(addDays(weekStart(ws),WSD===0?4:3));
+const wkRangeName=()=>WSD===0?'Sun–Sat':'Mon–Sun';
 const parseKey=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d||1)};
 function rangeLabel(a,b){
   if(a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth())return `${MON[a.getMonth()]} ${a.getDate()}–${b.getDate()}, ${a.getFullYear()}`;
@@ -336,11 +648,20 @@ function defaultPeriod(){
   const n=new Date(),tm=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1);let mx=null,any=null;
   state.recs.forEach(r=>{if(!r.date)return;if(!any||r.date>any)any=r.date;if(r.date<tm&&(!mx||r.date>mx))mx=r.date});
   mx=mx||any;return mx?'w:'+dKey(weekStart(mx)):'all'}
-function autoTitle(){
-  if(!state.titleAuto)return;const pi=periodInfo();
-  const kw=pi?(pi.kind==='week'?'Weekly ':pi.kind==='month'?'Monthly ':''):'';
-  $('#rTitle').value=pi?`OFSC ${kw}Report · ${pi.label}`:'OFSC Operations Report';
-}
+function fitTitle(){const t=document.getElementById('rTitle');if(!t)return;t.value=t.value.replace(/[\r\n]+/g,' ');try{if(window.CSS&&CSS.supports('field-sizing','content'))return}catch(e){}t.style.height='auto';t.style.height=t.scrollHeight+'px'}
+let TNAMES=null;const getTNames=()=>{if(!TNAMES)TNAMES=ls.get('i8ar.titles',{})||{};return TNAMES};
+function titleParts(){const pi=periodInfo();const kw=pi?(pi.kind==='week'?'Weekly ':pi.kind==='month'?'Monthly ':''):'';
+  const def=state.tab==='pmo'?'Executive PMO Update':`OFSC ${kw}${TABS[state.tab]?TABS[state.tab].name:'Report'}`;
+  const custom=getTNames()[state.tab];const name=custom||def;
+  let pre='',suf='';
+  if(state.tab==='pmo'){if(pi&&pi.kind==='week')pre=`Week ${weekNo(pi.from)} · `;else if(pi)suf=' · '+pi.label}
+  else if(pi)suf=' · '+pi.label;
+  return {pre,suf,name,def,custom:!!custom}}
+function autoTitle(){const t=titleParts();$('#rTitle').value=t.pre+t.name+t.suf;$('#titleReset').hidden=!t.custom;fitTitle()}
+function saveTitleFromInput(){const t=titleParts();let v=$('#rTitle').value.replace(/\s+/g,' ').trim();
+  if(!v){delete getTNames()[state.tab]}else{if(t.pre&&v.startsWith(t.pre.trim()))v=v.slice(t.pre.trim().length).replace(/^\s*·\s*/,'');if(t.suf&&v.endsWith(t.suf.trim()))v=v.slice(0,-t.suf.trim().length).replace(/\s*·\s*$/,'');v=v.trim();
+    if(!v||v===t.def)delete getTNames()[state.tab];else getTNames()[state.tab]=v}
+  ls.set('i8ar.titles',getTNames());autoTitle()}
 function dlt(cur,prv,mode,goodUp){
   if(prv==null||!isFinite(prv))return null;
   let d;if(mode==='pts')d=cur-prv;else{if(!prv)return null;d=pct(cur-prv,prv)}
@@ -429,18 +750,33 @@ function classify(v){const s=String(v||'').toLowerCase().trim();
   if(/complet|\bdone\b|closed|resolved|finish|success|validated|accomplish/.test(s))return 'Completed';
   if(/pend|start|suspend|open|ongoing|progress|en\s?route|assigned|hold|resched|deferred|not\s*started|scheduled/.test(s))return 'Open';
   return 'Other'}
+const TC_DEF={col:'',rpr:'RPR, REPAIR, RESTORE',afd:'AFD, AFTER SALE, AFTERSALE, WARRANTY'};
+function tcCfg(){return {...TC_DEF,...(state.rules.tc||{})}}
+const kwList=s=>String(s||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
+function tixKind(r,cfg){const c=(r.cat||'').toLowerCase();if(!c)return null;if(kwList(cfg.afd).some(k=>c.includes(k)))return 'AFD';if(kwList(cfg.rpr).some(k=>c.includes(k)))return 'RPR';return null}
+const AREA_CANON=[['camsur','CamSur'],['cam sur','CamSur'],['camarines sur','CamSur'],['albay','Albay'],['laguna','Laguna'],['batangas','Batangas'],['bicol','CamSur']];
+function areaAuto(raw){let x=String(raw).trim().replace(/^(infius8|i8)[\s_-]*(prwar)?[\s_-]*/i,'').replace(/^ofsc[\s_-]*/i,'').replace(/[\s_-]*(infius8|ofsc)$/i,'').trim();
+  if(/mpx/i.test(x))return 'CamSur';const l=x.toLowerCase();for(const [k,v] of AREA_CANON)if(l===k||l.replace(/[^a-z]/g,'')===k.replace(/[^a-z]/g,''))return v;
+  for(const [k,v] of AREA_CANON)if(l.includes(k))return v;return x||String(raw).trim()}
+function areaAlias(raw){const mp=state.rules.areaMap||{};if(mp[raw]!=null&&String(mp[raw]).trim())return String(mp[raw]).trim();return areaAuto(raw)}
+/* workforce: in-house = in the PC 1 deployment roster */
+function nameKey(n){const t=String(n||'').toUpperCase().replace(/-[A-Z]*\d+.*$/,'').replace(/[^A-Z\s]/g,' ').split(/\s+/).filter(w=>w.length>1);return t.length?t[0]+'|'+t[t.length-1]:''}
+let RKEYS=null;function rosterKeys(){if(RKEYS)return RKEYS;const S=new Set();try{getDep().areas.forEach(a=>a.techs.forEach(t=>{const k=nameKey(t.name);if(k)S.add(k)}))}catch(e){}RKEYS=S;return S}
+function wfOfRes(res){if(isBucket(res))return 'Unassigned';const K=rosterKeys();if(!K.size)return null;return K.has(nameKey(res))?'In-house':'Subcon'}
+const wfOf=r=>wfOfRes(r.resource);
 function formats(){return ls.get('i8ar.formats',{})}
 function saveFormat(){if(state.sample)return;const f=formats();f[state.sig]={map:state.map,sg:state.sg,rules:state.rules};ls.set('i8ar.formats',f)}
 
 /* ---------- records & validation ---------- */
 function build(){
   const m=state.map,recs=[];const seen=new Map();
-  const v={read:0,dup:0,noId:0,noStatus:0,noDate:0,badDate:0,future:0,noArea:0,badNum:0,samples:[]};
+  const v={read:0,dup:0,noId:0,noStatus:0,noDate:0,badDate:0,future:0,noArea:0,badNum:0,samples:[]};const rawAreas=new Map();
   const now=new Date();const tomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
   const serial=true;
   for(const {f,s} of incSheets()){
     const ix=k=>m[k]&&!m[k].startsWith('__')?s.headers.indexOf(m[k]):-1;
-    const I={id:ix('id'),status:ix('status'),area:ix('area'),resource:ix('resource'),type:ix('type'),date:ix('date'),value:ix('value')};
+    const I={id:ix('id'),status:ix('status'),area:ix('area'),resource:ix('resource'),type:ix('type'),date:ix('date'),value:ix('value'),reason:ix('reason')};
+    const tcc=tcCfg().col;const catI=tcc?s.headers.indexOf(tcc):I.type;
     const fileBase=f.name.replace(/\.[^.]+$/,'');
     const order=I.date>=0?dateOrder(s.rows.map(r=>r[I.date])):null;
     s.rows.forEach((r,ri)=>{
@@ -448,7 +784,7 @@ function build(){
       const g=k=>I[k]>=0?r[I[k]]:null;
       const id=blank(g('id'))?'':String(g('id')).trim();
       const stRaw=blank(g('status'))?'':String(g('status')).trim();
-      let area=m.area==='__file'?fileBase:m.area==='__sheet'?s.name:(blank(g('area'))?'':String(g('area')).trim());
+      let rawArea=m.area==='__file'?fileBase:m.area==='__sheet'?s.name:(blank(g('area'))?'':String(g('area')).trim());if(rawArea)rawAreas.set(rawArea,(rawAreas.get(rawArea)||0)+1);let area=rawArea?areaAlias(rawArea):'';
       const dRaw=g('date');const date=m.date?toDate(dRaw,serial,order):null;
       const vRaw=g('value');const val=m.value?toNum(vRaw):null;
       if(m.id&&!id){v.noId++;iss.push('Missing ID')}
@@ -458,7 +794,8 @@ function build(){
       if(m.value&&!blank(vRaw)&&val==null){v.badNum++;iss.push('Not a number')}
       const status=stRaw||'(Blank)';
       const rec={src:`${f.name} › ${s.name}`,row:s.rowNums[ri],id,status,group:state.sg[status]||classify(stRaw),area:area||'(Blank)',
-        resource:blank(g('resource'))?'(Blank)':String(g('resource')).trim(),type:blank(g('type'))?'(Blank)':String(g('type')).trim(),date,val,dup:false,iss};
+        resource:blank(g('resource'))?'(Blank)':String(g('resource')).trim(),type:blank(g('type'))?'(Blank)':String(g('type')).trim(),date,val,dup:false,iss,
+        cat:catI>=0&&!blank(r[catI])?String(r[catI]).trim():'',reason:blank(g('reason'))?'':String(g('reason')).trim().replace(/\s+/g,' ')};
       recs.push(rec);
     });
   }
@@ -466,12 +803,13 @@ function build(){
   if(m.id)for(let i=recs.length-1;i>=0;i--){const r=recs[i];if(!r.id)continue;const k=r.id.toLowerCase();
     if(seen.has(k)){r.dup=true;v.dup++;r.iss.push('Older copy of duplicate ID')}else seen.set(k,1)}
   for(const r of recs){if(r.iss.length){v.samples.push(r);if(v.samples.length>=200)break}}
-  state.recs=recs;state.val=v;
+  state.recs=recs;state.val=v;state.rawAreas=rawAreas;
 }
 function statusValues(){const c=new Map();state.recs.forEach(r=>c.set(r.status,(c.get(r.status)||0)+1));return [...c].sort((a,b)=>b[1]-a[1])}
 
 /* ---------- compute ---------- */
-function filtered(from,to){const a=state.filters.area;return state.recs.filter(r=>(!state.rules.dup||!r.dup)&&(a==='all'||r.area===a)&&(!from||(r.date&&r.date>=from&&r.date<to)))}
+function wfPass(r){const w=state.filters.wf||'all';if(w==='all')return true;const x=wfOf(r);return x===null||x===w}
+function filtered(from,to){const a=state.filters.area;return state.recs.filter(r=>(!state.rules.dup||!r.dup)&&(a==='all'||r.area===a)&&wfPass(r)&&(!from||(r.date&&r.date>=from&&r.date<to)))}
 function weeklyArea(end){
   const a=state.filters.area;
   const rs=state.recs.filter(r=>r.date&&(!state.rules.dup||!r.dup)&&(a==='all'||r.area===a));
@@ -591,7 +929,16 @@ function renderMap(){
   $('#sg').innerHTML=state.map.status?sv.map(([v,n],i)=>{const g=state.sg[v]||classify(v==='(Blank)'?'':v);
     return `<div class="sg-row"><span class="dot" style="background:var(--${GCOL[g]})"></span><span class="v" title="${esc(v)}">${esc(v)}</span><span class="c">${fmt(n)}</span><select data-sv="${i}" aria-label="Group for ${esc(v)}">${GROUPS.map(x=>`<option ${x===g?'selected':''}>${x}</option>`).join('')}</select></div>`}).join(''):'<div class="small">Map a Status column first.</div>';
   $('#sg').dataset.vals=JSON.stringify(sv.map(x=>x[0]));
+  const tc=tcCfg();
+  $('#tcCol').innerHTML=`<option value="">Activity type (mapped above)</option>`+state.headers.filter(h=>state.prof[h]?.n&&h!==state.map.type).map(h=>`<option ${h===tc.col?'selected':''} value="${esc(h)}">${esc(h)}</option>`).join('');
+  $('#tcRpr').value=tc.rpr;$('#tcAfd').value=tc.afd;renderTcHint();
+  const ra=[...(state.rawAreas||new Map())].sort((a,b)=>b[1]-a[1]);
+  $('#areaMapBox').innerHTML=ra.length?ra.map(([raw,n],i)=>`<div class="sg-row"><span class="v" title="${esc(raw)}">${esc(raw)}</span><span class="c">${fmt(n)}</span><span aria-hidden="true">→</span><input type="text" id="am_${i}" data-am="${i}" value="${esc(areaAlias(raw))}" aria-label="Report name for ${esc(raw)}" style="width:120px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--surface);font-size:12px"></div>`).join(''):'<div class="small">Map an Area column, or choose (Use file name).</div>';
+  $('#areaMapBox').dataset.raw=JSON.stringify(ra.map(x=>x[0]));
 }
+function renderTcHint(){const tc=tcCfg();let r=0,a=0,rr=0,ar=0;
+  state.recs.forEach(x=>{if(state.rules.dup&&x.dup)return;const k=tixKind(x,tc);if(k==='RPR'){r++;if(x.reason)rr++}else if(k==='AFD'){a++;if(x.reason)ar++}});
+  $('#tcHint').textContent=`Found ${fmt(r)} RPR and ${fmt(a)} AFD tickets in all loaded data.`+(state.map.reason?` ${fmt(rr+ar)} of them have a reason in "${state.map.reason}".`:' Map a Reason column above to get the top 3 reasons.')}
 function renderVal(){
   const v=state.val;const used=state.rules.dup?v.read-v.dup:v.read;
   const bad=state.recs.filter(r=>r.iss.length).length;const q=pct(v.read-bad,v.read);
@@ -615,11 +962,12 @@ function renderFilters(){
   $('#fArea').innerHTML=`<option value="all">All areas</option>`+areas.map(a=>`<option ${a===F.area?'selected':''} value="${esc(a)}">${esc(a)}</option>`).join('');
   const o=(v,l)=>`<option value="${v}" ${v===F.period?'selected':''}>${l}</option>`;
   $('#fPeriod').innerHTML=o('all','All dates')+
-    (weeks.length?`<optgroup label="Weeks (Mon–Sun)">${weeks.map(w=>{const s=parseKey(w);return o('w:'+w,rangeLabel(s,addDays(s,6)))}).join('')}</optgroup>`:'')+
+    (weeks.length?`<optgroup label="Weeks (${wkRangeName()})">${weeks.map(w=>{const s=parseKey(w);return o('w:'+w,rangeLabel(s,addDays(s,6)))}).join('')}</optgroup>`:'')+
     (months.length?`<optgroup label="Months">${months.map(m=>o('m:'+m,mLabel(m))).join('')}</optgroup>`:'')+
     (ds.length?o('custom','Custom range…'):'');
   $('#customBox').hidden=F.period!=='custom';
   $('#fFrom').value=F.from;$('#fTo').value=F.to;
+  const hasR=rosterKeys().size>0;const wsel=$('#fWf');wsel.value=hasR?(F.wf||'all'):'all';wsel.disabled=!hasR;wsel.title=hasR?'In-house = technicians in the PC 1 deployment list':'Add in-house technicians in PC 1 deployment to split in-house and subcon';
 }
 
 /* ---------- charts ---------- */
@@ -660,6 +1008,9 @@ function drawCharts(st){
   Object.values(charts).forEach(c=>c.destroy());charts={};
   if(!window.Chart)return;
   Chart.defaults.font.family=getComputedStyle(document.body).fontFamily;
+  if(state.tab==='ops'&&st.ops){const c=opsCfgs(st.ops,pal(),{size:12});if(c.daily)charts.daily=new Chart($('#chDaily'),c.daily);charts.aging=new Chart($('#chAging'),c.aging);return}
+  if(state.tab==='pmo'&&st.pmo){drawPmoCharts(st);return}
+  if(state.tab==='bill'&&st.bill){const c=billCfgs(st.bill,pal(),{size:12});if(c.week)charts.bw=new Chart($('#chBillWeek'),c.week);const uc=upCfg(st.unpaid,pal(),{size:12});if(uc){$('#chUp').parentNode.style.height=Math.max(160,st.unpaid.probs.length*34+40)+'px';charts.up=new Chart($('#chUp'),uc)}return}
   const c=cfgs(st,pal(),{size:12});
   $('#areaBox').style.height=c.areaH+'px';$('#typeBox').style.height=c.typeH+'px';
   charts.status=new Chart($('#chStatus'),c.status);
@@ -682,11 +1033,11 @@ function renderReport(){
   const partial=st.cov&&st.cov.prev?' · partial data':'';
   const f=state.filters;
   const per=pi?pi.label:st.min?`${dLabel(st.min)} – ${dLabel(st.max)}`:'No dates mapped';
-  $('#rMeta').textContent=`${per} · ${f.area==='all'?'All areas':f.area}${pi?` · compared with ${pi.plabel}`:''}`;
+  $('#rMeta').textContent=`${per} · ${f.area==='all'?'All areas':f.area}${f.wf&&f.wf!=='all'?' · '+f.wf+' only':''}${pi?` · compared with ${pi.plabel}`:''}`;
   const D=pv?{total:dlt(st.total,pv.total,'pct',null),rate:dlt(st.rate,pv.rate,'pts',true),done:dlt(st.groups.Completed,pv.groups.Completed,'pct',true),
     nd:dlt(st.groups['Not completed'],pv.groups['Not completed'],'pct',false),op:dlt(st.groups.Open,pv.groups.Open,'pct',null),cx:dlt(st.groups.Cancelled,pv.groups.Cancelled,'pct',false),
     val:st.valN&&pv.valN?dlt(st.valSum/st.valN,pv.valSum/pv.valN,'pct',null):null}:{};
-  st.deltas=D;
+  st.deltas=D;st.rs=rs;st.prevRs=pr;
   const dh=d=>d?`<span class="delta ${d.cls}">${d.txt} <small>vs ${pi.pname}${partial}</small></span>`:(pi?`<span class="delta neu"><small>no data for ${pi.pname}</small></span>`:'');
   if(!st.total){$('#kpis').innerHTML=`<div class="empty" style="grid-column:1/-1">No records for this period. Import a file or pick another period.</div>`}
   else{
@@ -715,8 +1066,599 @@ function renderReport(){
   const res=[...st.byRes].sort((a,b)=>b[1].total-a[1].total);
   $('#resSub').textContent=state.map.resource?`Top ${Math.min(15,res.length)} of ${fmt(res.length)} by volume`:'Map a Resource column to see this table';
   $('#resTbl').innerHTML=state.map.resource?`<table><thead><tr><th>Resource</th><th class="n">Total</th><th class="n">Completed</th><th class="n">Not completed</th><th class="n">Open</th><th class="n">Cancelled</th><th class="n">Rate</th></tr></thead><tbody>${res.slice(0,15).map(([k,o])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(o.total)}</td><td class="n">${fmt(o.Completed)}</td><td class="n">${fmt(o['Not completed'])}</td><td class="n">${fmt(o.Open)}</td><td class="n">${fmt(o.Cancelled)}</td><td class="n">${rateCell(st.rateOf(o))}</td></tr>`).join('')}</tbody></table>`:'';
+  st.ops=opsCompute(st,rs);st.bill=billCompute(st,rs);
+  renderOps(st);renderBill(st);renderPmo(st);showTab();
   drawCharts(st);
 }
+
+/* ---------- PC 1 / PC 2 reports ---------- */
+const TABS={ops:{name:'Operations Report'},bill:{name:'Billing & Validation Report'},kpi:{name:'KPI Report'},pmo:{name:'Executive PMO Update'}};
+const today0=()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())};
+const isBucket=r=>!r||r==='(Blank)'||/^(infius8|i8)[\s_-]/i.test(r)||/bucket|unassigned/i.test(r);
+const AGE=[[0,1,'0–1 day'],[2,3,'2–3 days'],[4,7,'4–7 days'],[8,14,'8–14 days'],[15,30,'15–30 days'],[31,Infinity,'Over 30 days']];
+const peso=n=>'₱'+fmt(n,n%1?2:0);
+const pesoPlain=n=>'PHP '+fmt(n,n%1?2:0);
+let RATES=null;const getRates=()=>{if(!RATES)RATES=ls.get('i8ar.rates',{});return RATES};
+const setRates=r=>{RATES=r;ls.set('i8ar.rates',r)};
+const rateFor=(rates,t)=>{const v=rates[t];return v==null||v===''||!isFinite(+v)?null:+v};
+function kpiCard(l,v,s,dh='',cls=''){return `<div class="kpi ${cls}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span>${dh}</div>`}
+function dHtml(st,d){const pi=st.pi;if(!pi||d===undefined)return '';const partial=st.cov&&st.cov.prev?' · partial data':'';
+  return d?`<span class="delta ${d.cls}">${d.txt} <small>vs ${pi.pname}${partial}</small></span>`:`<span class="delta neu"><small>no data for ${pi.pname}</small></span>`}
+function poolRecs(){const a=state.filters.area;return state.recs.filter(r=>(!state.rules.dup||!r.dup)&&(a==='all'||r.area===a)&&wfPass(r))}
+function mostFreq(map){let b=null,n=-1;map.forEach((v,k)=>{if(v>n){n=v;b=k}});return b}
+function pill(t,c){return `<span class="st ${c}">${t}</span>`}
+
+function opsCompute(st,rs){
+  const pi=st.pi,thr=state.rules.overdue||3;
+  const t0=today0();let asOf=pi?addDays(pi.to,-1):t0;if(asOf>t0)asOf=t0;
+  const pool=poolRecs();
+  const backlog=pool.filter(r=>r.group==='Open'&&r.date&&r.date<=asOf).map(r=>({r,age:Math.floor((asOf-r.date)/DAY)})).sort((x,y)=>y.age-x.age);
+  const openNoDate=pool.filter(r=>r.group==='Open'&&!r.date).length;
+  const overdue=backlog.filter(x=>x.age>thr);
+  const aging=AGE.map(([lo,hi,l])=>({l,lo,hi,n:backlog.filter(x=>x.age>=lo&&x.age<=hi).length}));
+  const unassigned=backlog.filter(x=>isBucket(x.r.resource));
+  let daily=null;const ds=rs.filter(r=>r.date);
+  if(ds.length){let mn=ds[0].date,mx=mn;ds.forEach(r=>{if(r.date<mn)mn=r.date;if(r.date>mx)mx=r.date});
+    const gran=(mx-mn)/DAY<=45?'day':'week';const key=d=>gran==='day'?dKey(d):dKey(weekStart(d));
+    const m=new Map();ds.forEach(r=>{const k=key(r.date);let o=m.get(k);if(!o){o={total:0};GROUPS.forEach(g=>o[g]=0);m.set(k,o)}o.total++;o[r.group]++});
+    const keys=[];if(gran==='day'){for(let d=new Date(mn);d<=mx;d=addDays(d,1))keys.push(dKey(d))}else{for(let d=weekStart(mn);d<=mx;d=addDays(d,7))keys.push(dKey(d))}
+    daily={gran,keys,labels:keys.map(k=>{const d=parseKey(k);return (gran==='week'?'Wk ':'')+MON[d.getMonth()]+' '+d.getDate()}),rows:keys.map(k=>m.get(k)||null)};
+    let bi=-1,bn=-1;daily.rows.forEach((o,i)=>{if(o&&o.Completed>bn){bn=o.Completed;bi=i}});daily.best=bi>=0?{label:daily.labels[bi],n:bn}:null;
+  }
+  const bl=new Map(),od=new Map(),odRes=new Map();
+  backlog.forEach(x=>{bl.set(x.r.area,(bl.get(x.r.area)||0)+1);if(x.age>thr){od.set(x.r.area,(od.get(x.r.area)||0)+1);odRes.set(x.r.resource,(odRes.get(x.r.resource)||0)+1)}});
+  const techs=new Map(),days=new Map(),resArea=new Map();
+  rs.forEach(r=>{if(isBucket(r.resource))return;
+    let s=techs.get(r.area);if(!s){s=new Set();techs.set(r.area,s)}s.add(r.resource);
+    if(r.date){let d=days.get(r.resource);if(!d){d=new Set();days.set(r.resource,d)}d.add(dKey(r.date))}
+    let a=resArea.get(r.resource);if(!a){a=new Map();resArea.set(r.resource,a)}a.set(r.area,(a.get(r.area)||0)+1)});
+  const empty=()=>{const o={total:0};GROUPS.forEach(g=>o[g]=0);return o};
+  const areas=[...new Set([...st.byArea.keys(),...bl.keys()])].map(k=>{const o=st.byArea.get(k)||empty();const base=rateBase(o);const rate=base?st.rateOf(o):null;
+    const b=bl.get(k)||0,d=od.get(k)||0;
+    const status=(!o.total&&!b)?null:(d>=Math.max(5,b*.3)||(base>=5&&rate<60))?'Delayed':(d>0||(base>=5&&rate<80))?'At risk':'On track';
+    return {k,o,rate,backlog:b,overdue:d,techs:techs.get(k)?.size||0,status}}).sort((x,y)=>y.o.total-x.o.total||y.backlog-x.backlog);
+  const res=[...st.byRes].filter(([k])=>!isBucket(k)).map(([k,o])=>{const base=rateBase(o);const dd=days.get(k)?.size||0;
+    return {k,o,rate:base?st.rateOf(o):null,days:dd,perDay:dd?o.total/dd:null,area:resArea.get(k)?mostFreq(resArea.get(k)):'',overdue:odRes.get(k)||0}}).sort((a,b)=>b.o.total-a.o.total);
+  return {asOf,thr,backlog,openNoDate,overdue,aging,unassigned,daily,areas,res,active:res.length,techTotal:res.reduce((a,x)=>a+x.o.total,0)};
+}
+function opsInsights(st,o){
+  const F=[],A=[];
+  if(st.total)F.push(`<b>${fmt(st.total)}</b> activities in this period: ${fmt(st.groups.Completed)} completed, ${fmt(st.groups['Not completed'])} not done, ${fmt(st.groups.Open)} still open, ${fmt(st.groups.Cancelled)} cancelled.`);
+  if(o.daily&&o.daily.best&&o.daily.best.n>0)F.push(`Best ${o.daily.gran==='day'?'day':'week'} for accomplishment: <b>${o.daily.best.label}</b> with ${fmt(o.daily.best.n)} completed.`);
+  F.push(`Open backlog as of <b>${dLabel(o.asOf)}</b>: <b>${fmt(o.backlog.length)}</b> activities, ${fmt(o.overdue.length)} of them older than ${o.thr} days.`);
+  if(o.backlog.length){const x=o.backlog[0];F.push(`Oldest open activity: ${x.r.id?'<b>'+esc(x.r.id)+'</b>':'a record'} in ${esc(x.r.area)} (${esc(x.r.status)}), ${fmt(x.age)} days old.`)}
+  if(o.active){F.push(`<b>${fmt(o.active)}</b> technicians worked in this period, ${fmt(o.techTotal/o.active,1)} activities each on average.`);
+    const top=[...o.res].sort((a,b)=>b.o.Completed-a.o.Completed)[0];if(top&&top.o.Completed)F.push(`Most completed: <b>${esc(top.k)}</b> with ${fmt(top.o.Completed)}.`)}
+  const odArea=[...o.areas].sort((a,b)=>b.overdue-a.overdue)[0];
+  if(odArea&&odArea.overdue)A.push(`<b>${esc(odArea.k)}</b> has the most overdue open activities (${fmt(odArea.overdue)}). Escalate to the PM.`);
+  const del=o.areas.filter(a=>a.status==='Delayed').map(a=>esc(a.k));if(del.length)A.push(`Delayed: <b>${del.join(', ')}</b>. Prioritize these in tomorrow's deployment.`);
+  if(o.unassigned.length)A.push(`<b>${fmt(o.unassigned.length)}</b> open activities are still in a bucket and not assigned to a technician. Check manpower deployment.`);
+  if(st.groups['Not completed'])A.push(`<b>${fmt(st.groups['Not completed'])}</b> activities were marked not done this period. Reschedule or coordinate with the client.`);
+  const odTech=o.res.filter(r=>r.overdue).sort((a,b)=>b.overdue-a.overdue).slice(0,3);
+  if(odTech.length)A.push(`Technicians holding the most overdue jobs: ${odTech.map(r=>`<b>${esc(r.k)}</b> (${r.overdue})`).join(', ')}.`);
+  if(o.openNoDate)A.push(`${fmt(o.openNoDate)} open activities have no date, so their age is unknown.`);
+  if(state.val.future)A.push(`${fmt(state.val.future)} records have a future date and are left out of the backlog. Check the source dates.`);
+  if(!A.length)A.push('No operational issues to escalate.');
+  return {F,A};
+}
+/* ticket status */
+function topReasons(list,n=3){const c=new Map();let none=0;list.forEach(r=>{if(!r.reason){none++;return}const k=r.reason.length>90?r.reason.slice(0,88)+'…':r.reason;c.set(k,(c.get(k)||0)+1)});
+  return {top:[...c].sort((a,b)=>b[1]-a[1]).slice(0,n).map(([k,v])=>({k,n:v,p:pct(v,list.length)})),none,distinct:c.size}}
+function tixCompute(rs){
+  const cfg=tcCfg();const rpr=[],afd=[];const byArea=new Map();
+  const ga=k=>{let a=byArea.get(k);if(!a){a={ext:0,done:0,rpr:0,afd:0};byArea.set(k,a)}return a};
+  rs.forEach(r=>{const a=ga(r.area);a.ext++;if(r.group==='Completed')a.done++;const k=tixKind(r,cfg);if(k==='RPR'){rpr.push(r);a.rpr++}else if(k==='AFD'){afd.push(r);a.afd++}});
+  return {ext:rs.length,done:rs.filter(r=>r.group==='Completed').length,rpr:rpr.length,afd:afd.length,rprR:topReasons(rpr),afdR:topReasons(afd),byArea:[...byArea].sort((x,y)=>y[1].ext-x[1].ext)};
+}
+function reasonList(R,total){
+  if(!total)return '<div class="s">None in this period</div>';
+  if(!state.map.reason)return '<div class="s">Map a Reason column in Step 2 to see the top 3</div>';
+  if(!R.top.length)return '<div class="s">No reasons filled in</div>';
+  return `<ol>${R.top.map(x=>`<li>${esc(x.k)}<span>${fmt(x.n)} · ${fmt(x.p,0)}%</span></li>`).join('')}</ol>${R.none?`<div class="s">${fmt(R.none)} with no reason</div>`:''}`}
+function renderTix(st){
+  const t=st.tix;
+  $('#tixSub').textContent=`${st.pi?st.pi.label:'All dates'} · RPR and AFD from "${tcCfg().col||state.map.type||'Activity type'}"`;
+  $('#tixBox').innerHTML=`
+    <div><span class="l">Extracted</span><span class="v">${fmt(t.ext)}</span><span class="s">tickets received</span></div>
+    <div><span class="l">Completed</span><span class="v" style="color:var(--good)">${fmt(t.done)}</span><span class="s">${fp(pct(t.done,t.ext))} of extracted</span></div>
+    <div><span class="l">RPR</span><span class="v">${fmt(t.rpr)}</span><span class="s">Top 3 reasons</span>${reasonList(t.rprR,t.rpr)}</div>
+    <div><span class="l">AFD · after sale</span><span class="v">${fmt(t.afd)}</span><span class="s">Top 3 reasons</span>${reasonList(t.afdR,t.afd)}</div>`;
+  $('#tixAreaTbl').innerHTML=`<table><thead><tr><th>Area</th><th class="n">Extracted</th><th class="n">Completed</th><th class="n">RPR</th><th class="n">AFD</th></tr></thead><tbody>${t.byArea.map(([k,a])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(a.ext)}</td><td class="n">${fmt(a.done)}</td><td class="n">${fmt(a.rpr)}</td><td class="n">${fmt(a.afd)}</td></tr>`).join('')}<tr class="total"><td>Total</td><td class="n">${fmt(t.ext)}</td><td class="n">${fmt(t.done)}</td><td class="n">${fmt(t.rpr)}</td><td class="n">${fmt(t.afd)}</td></tr></tbody></table>`;
+}
+/* in-house deployment (daily history) */
+const DST=[['DTY','Duty'],['STDBY','Stand by'],['RD','Rest day'],['LEAVE','Leave'],['ABSENT','Absent'],['HALF DAY','Half day']];
+const DSTK=DST.map(x=>x[0]);
+const DCODE={'DTY':'DTY','STDBY':'SB','RD':'RD','LEAVE':'LV','ABSENT':'ABS','HALF DAY':'HD'};
+let DEP=null;
+const newId=()=>'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function normSt(s){s=String(s||'').trim().toUpperCase();if(/^(DTY|DUTY)$/.test(s))return 'DTY';if(/^(STDBY|STAND ?BY|SB)$/.test(s))return 'STDBY';if(/^(RD|REST ?DAY|REST)$/.test(s))return 'RD';if(/^(LEAVE|LV|VL|SL)/.test(s))return 'LEAVE';if(/^ABS/.test(s))return 'ABSENT';if(/HALF|^HD$/.test(s))return 'HALF DAY';return 'DTY'}
+function getDep(){
+  if(DEP)return DEP;
+  const tk=dKey(today0());
+  let d=ls.get('i8ar.dep',null);
+  if(!d||!Array.isArray(d.areas)){
+    const old=ls.get('i8ar.roster',null);const areas=[];
+    if(old&&Array.isArray(old.techs)&&old.techs.length){old.techs.forEach(t=>{const n=(t.area||'Unassigned').trim()||'Unassigned';let a=areas.find(x=>x.name===n);if(!a){a={name:n,tl:'',techs:[]};areas.push(a)}a.techs.push({name:t.name||'',st:normSt(t.st==='Duty'?'DTY':t.st),partner:''})})}
+    else ['Laguna','Batangas','Albay'].forEach(n=>areas.push({name:n,tl:'',techs:[]}));
+    d={areas,per:(old&&old.per)||2,at:''}}
+  if(!d.days)d.days={};
+  // migrate single-status techs into today's record
+  let mig=null;d.areas.forEach(a=>a.techs.forEach(t=>{if(!t.id)t.id=newId();if(t.st){mig=mig||{};mig[t.id]=normSt(t.st);delete t.st}}));
+  if(mig&&!d.days[tk])d.days[tk]=mig;
+  DEP=d;return DEP}
+function saveDep(){RKEYS=null;rosterDirty=true;const d=getDep();const n=new Date();d.at=`${dLabel(n)} ${n.toTimeString().slice(0,5)}`;ls.set('i8ar.dep',d)}
+let depDate=dKey(today0());
+function allTechs(){return getDep().areas.flatMap(a=>a.techs.map(t=>({t,a})))}
+function dayView(date){const D=getDep();if(D.days[date])return {saved:true,map:D.days[date],from:null};
+  const prev=Object.keys(D.days).filter(k=>k<date).sort().pop();return {saved:false,map:prev?D.days[prev]:{},from:prev||null}}
+const stOn=(view,t)=>view.map[t.id]||'DTY';
+function ensureDay(date){const D=getDep();if(D.days[date])return D.days[date];const v=dayView(date);const m={};allTechs().forEach(({t})=>m[t.id]=stOn(v,t));D.days[date]=m;return m}
+const stCls=s=>'s-'+(s==='HALF DAY'?'HALF':s);
+const normA=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function depCompute(st){
+  const D=getDep();const unit=1/(D.per||2);const view=dayView(depDate);
+  const minClosed=5;const ihOnly=rosterKeys().size>0;const ranked=(st.ops?st.ops.res:[]).filter(r=>r.rate!=null&&rateBase(r.o)>=minClosed&&(!ihOnly||wfOfRes(r.k)==='In-house')).sort((a,b)=>b.rate-a.rate||b.o.Completed-a.o.Completed||b.o.total-a.o.total);
+  const topBy=new Map();ranked.forEach(r=>{const k=normA(r.area);if(!topBy.has(k))topBy.set(k,r)});
+  const topFor=name=>{const n=normA(name);if(topBy.has(n))return topBy.get(n);for(const [k,v] of topBy)if(n&&(k.includes(n)||n.includes(k)))return v;return null};
+  const rows=D.areas.map(a=>{const c={};DSTK.forEach(k=>c[k]=0);const named=a.techs.filter(t=>(t.name||'').trim());named.forEach(t=>c[stOn(view,t)]++);
+    return {a:a.name,tl:a.tl,c,total:named.length,top:topFor(a.name),techs:named.map(t=>({name:t.name,partner:t.partner||'',st:stOn(view,t)}))}});
+  const all={};DSTK.forEach(k=>all[k]=rows.reduce((s,r)=>s+r.c[k],0));
+  return {rows,all,allTotal:rows.reduce((s,r)=>s+r.total,0),unit,per:D.per||2,top5:ranked.slice(0,5),minClosed,at:D.at,date:depDate,saved:view.saved,from:view.from,att:attCompute(st)};
+}
+function attCompute(st){
+  const D=getDep();const pi=st.pi;const t0=today0();
+  let from,to;if(pi){from=pi.from;to=pi.to;if(to>addDays(t0,1))to=addDays(t0,1)}else{to=addDays(parseKey(depDate),1);from=addDays(to,-7)}
+  const days=[];for(let d=new Date(from);d<to&&days.length<93;d=addDays(d,1))days.push(dKey(d));
+  const fa=$('#attArea')?$('#attArea').value||'all':'all';
+  const rows=[];D.areas.forEach(a=>{if(fa!=='all'&&a.name!==fa)return;a.techs.filter(t=>(t.name||'').trim()).forEach(t=>{const cells=days.map(k=>D.days[k]?(D.days[k][t.id]||null):null);const c={};DSTK.forEach(s=>c[s]=0);let rec=0;cells.forEach(s=>{if(s){c[s]++;rec++}});rows.push({name:t.name,area:a.name,cells,c,rec})})});
+  const recDays=days.filter(k=>D.days[k]).length;
+  return {days,rows,recDays,label:days.length?rangeLabel(parseKey(days[0]),parseKey(days[days.length-1])):'',grid:days.length<=31};
+}
+const nfmt=n=>fmt(n,1);
+function sumTableHtml(r,unit){return `<table><tbody>${DST.map(([k,l])=>`<tr><td>${l.toUpperCase()}</td><td class="n">${fmt(r.c[k])}</td><td class="n small">${nfmt(r.c[k]*unit)} team${r.c[k]*unit===1?'':'s'}</td></tr>`).join('')}<tr class="total"><td>TOTAL</td><td class="n">${fmt(r.total)}</td><td class="n small">${nfmt(r.total*unit)} teams</td></tr></tbody></table>`}
+const dayName=k=>{const d=parseKey(k);return `${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]}, ${dLabel(d)}`};
+function renderDepSums(st){
+  const d=st.dep=depCompute(st);
+  $('#depDate').value=depDate;
+  $('#depSub').textContent=`1 technician = ${fmt(d.unit,2)} team${d.at?' · last edit '+d.at:''}`;
+  $('#depState').innerHTML=d.saved?pill('Saved for '+dayName(depDate),'good'):pill('Not saved yet','warn');
+  const b=$('#depBanner');
+  if(!d.saved&&allTechs().length){b.hidden=false;b.innerHTML=`<span>No record for <b>${dayName(depDate)}</b> yet. ${d.from?`Showing the statuses from ${dayName(d.from)}.`:'Everyone starts as DTY.'} Change any status to save this day, or save it as is.</span><button class="btn primary" type="button" id="depSaveDay">Save as ${dLabel(parseKey(depDate))}</button>`}
+  else b.hidden=true;
+  d.rows.forEach((r,i)=>{const el=document.getElementById('dasum_'+i);if(!el)return;
+    el.innerHTML=`<div class="sh">${esc(r.a||'Area')} summary</div>${sumTableHtml(r,d.unit)}<div class="top">Top technician: ${r.top?`<b>${esc(r.top.k)}</b> · ${fmt(r.top.rate,0)}%`:'— <span class="small">(no match in the OFSC data for this area name)</span>'}</div>`});
+  $('#depAllH').textContent=`Summary · all areas · ${dayName(depDate)}`;
+  $('#depTbl').innerHTML=d.rows.length?`<table><thead><tr><th>Status</th>${d.rows.map(r=>`<th class="n">${esc(r.a)}</th>`).join('')}<th class="n">Total</th><th class="n">Teams</th></tr></thead><tbody>${DST.map(([k,l])=>`<tr><td>${l}</td>${d.rows.map(r=>`<td class="n">${fmt(r.c[k])}</td>`).join('')}<td class="n"><b>${fmt(d.all[k])}</b></td><td class="n">${nfmt(d.all[k]*d.unit)}</td></tr>`).join('')}<tr class="total"><td>Total</td>${d.rows.map(r=>`<td class="n">${fmt(r.total)}</td>`).join('')}<td class="n">${fmt(d.allTotal)}</td><td class="n">${nfmt(d.allTotal*d.unit)}</td></tr></tbody></table>`:'<div class="small">Add an area to start.</div>';
+  $('#topTech').innerHTML=d.top5.length?d.top5.map(r=>`<li><b>${esc(r.k)}</b><span class="p">${fmt(r.rate,0)}%</span><span class="m">${esc(r.area)} · ${fmt(r.o.Completed)} completed of ${fmt(rateBase(r.o))} closed</span></li>`).join(''):'<li style="list-style:none;margin-left:-20px" class="small">Map a Resource column to rank technicians.</li>';
+  $('#topTechSub').textContent=`${rosterKeys().size?'In-house technicians only. ':''}Ranked by completion rate in this period, then by completed jobs. Needs at least ${d.minClosed} closed jobs. Buckets left out.`;
+  renderAtt(d.att);
+}
+function renderAtt(A){
+  const sel=$('#attArea');const cur=sel.value||'all';const names=getDep().areas.map(a=>a.name);
+  sel.innerHTML=`<option value="all">All areas</option>`+names.map(n=>`<option ${n===cur?'selected':''} value="${esc(n)}">${esc(n)}</option>`).join('');
+  $('#attSub').textContent=A.days.length?`${A.label} · follows the report Period · ${A.recDays} of ${A.days.length} days recorded · DTY duty, SB stand by, RD rest day, LV leave, ABS absent, HD half day, — no record`:'';
+  if(!A.rows.length){$('#attTbl').innerHTML='<div class="small" style="padding:8px 0">No technicians yet.</div>';return}
+  const cnt=DST.map(([k])=>`<th class="n">${DCODE[k]}</th>`).join('');
+  $('#attTbl').innerHTML=`<table><thead><tr><th>Technician</th><th>Area</th>${A.grid?A.days.map(k=>{const d=parseKey(k);return `<th class="dcol">${['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()]}<br>${d.getDate()}</th>`}).join(''):''}${cnt}<th class="n">Days</th></tr></thead><tbody>${A.rows.map(r=>`<tr><td>${esc(r.name)}</td><td class="small">${esc(r.area)}</td>${A.grid?r.cells.map(s=>`<td class="code ${s?'c-'+(s==='HALF DAY'?'HALF':s):'c-none'}">${s?DCODE[s]:'—'}</td>`).join(''):''}${DSTK.map(k=>`<td class="n">${r.c[k]||'·'}</td>`).join('')}<td class="n">${r.rec}</td></tr>`).join('')}</tbody></table>${A.grid?'':'<div class="small" style="margin-top:6px">The period is longer than 31 days, so only the totals are shown.</div>'}`;
+}
+function renderDep(st){renderDepSums(st)}
+function renderRosterEditor(){
+  const D=getDep();$('#depPer').value=D.per||2;const view=dayView(depDate);
+  const opts=s=>DST.map(([k])=>`<option ${k===s?'selected':''} value="${k}">${k}</option>`).join('');
+  $('#depAreas').innerHTML=D.areas.map((a,ai)=>`<section class="dep-area" aria-label="${esc(a.name)} deployment">
+    <div class="da-h"><input type="text" id="dan_${ai}" data-ai="${ai}" data-f="name" value="${esc(a.name)}" aria-label="Area name"><button class="x setup" type="button" data-adel="${ai}" aria-label="Remove area ${esc(a.name)}">✕</button></div>
+    <div class="da-tl"><span>TL</span><input type="text" id="datl_${ai}" data-ai="${ai}" data-f="tl" value="${esc(a.tl||'')}" placeholder="Team leader name" aria-label="Team leader"></div>
+    ${a.techs.length?`<table class="da-t"><colgroup><col><col class="c-st"><col class="c-p"><col class="c-x setup"></colgroup><thead><tr><th>Technician</th><th>Status</th><th>Partner / remarks</th><th class="setup"></th></tr></thead><tbody>${a.techs.map((t,ti)=>{const s=stOn(view,t);return `<tr class="${stCls(s)}"><td><input type="text" id="dt_${ai}_${ti}" data-ai="${ai}" data-ti="${ti}" data-f="name" value="${esc(t.name)}" title="${esc(t.name)}" placeholder="Name" aria-label="Technician name"></td><td class="stc"><select id="ds_${ai}_${ti}" data-ai="${ai}" data-ti="${ti}" data-f="st" aria-label="Status of ${esc(t.name||'technician')}">${opts(s)}</select></td><td><input type="text" id="dp_${ai}_${ti}" data-ai="${ai}" data-ti="${ti}" data-f="partner" value="${esc(t.partner||'')}" aria-label="Partner or remarks"></td><td class="setup"><button class="x" type="button" data-tdel="${ai}:${ti}" aria-label="Remove ${esc(t.name||'row')}">✕</button></td></tr>`}).join('')}</tbody></table>`:'<div class="empty-row">No technicians yet. <span class="setup">Add them below.</span><span class="pres-only">Exit presentation to add them.</span></div>'}
+    <div class="da-add setup"><button class="btn" type="button" data-tadd="${ai}">Add technician</button>
+      <details><summary>Paste many names</summary><textarea id="dpaste_${ai}" rows="4" placeholder="One per line. Status is optional:&#10;JOEY M. BUERGO&#10;ROBERTO M. EBORA, RD"></textarea><button class="btn" type="button" data-pastebtn="${ai}" style="margin-top:6px">Add to ${esc(a.name)}</button></details></div>
+    <div class="da-sum" id="dasum_${ai}"></div>
+  </section>`).join('');
+  if(current)renderDepSums(current);
+}
+async function exportDepHistory(){
+  if(!window.XLSX){toast('Excel tools did not load.');return}
+  const D=getDep();const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Area','TL','Technician','Partner / remarks','Technician ID'],...D.areas.flatMap(a=>a.techs.length?a.techs.map(t=>[a.name,a.tl||'',t.name,t.partner||'',t.id]):[[a.name,a.tl||'','','','']])]),'Roster');
+  const rows=[['Date','Area','Technician','Status','Technician ID']];
+  Object.keys(D.days).sort().forEach(k=>D.areas.forEach(a=>a.techs.forEach(t=>{const s=D.days[k][t.id];if(s)rows.push([k,a.name,t.name,s,t.id])})));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Daily status');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Technicians per team',D.per||2],['Exported',new Date().toISOString()]]),'Settings');
+  await save(`INFIUS8_Deployment_History_${dKey(new Date())}.xlsx`,new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})]));
+}
+async function importDepHistory(file){
+  try{
+    const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
+    const R=wb.Sheets['Roster'],S=wb.Sheets['Daily status'];if(!R||!S){toast('This file is not a deployment history export. It needs Roster and Daily status sheets.');return}
+    const rr=XLSX.utils.sheet_to_json(R,{header:1,defval:''}).slice(1),sr=XLSX.utils.sheet_to_json(S,{header:1,defval:'',raw:false}).slice(1);
+    const areas=[];rr.forEach(r=>{const n=String(r[0]).trim();if(!n)return;let a=areas.find(x=>x.name===n);if(!a){a={name:n,tl:String(r[1]||'').trim(),techs:[]};areas.push(a)}const nm=String(r[2]||'').trim();if(nm)a.techs.push({id:String(r[4]||'').trim()||newId(),name:nm,partner:String(r[3]||'').trim()})});
+    const days={};sr.forEach(r=>{const k=String(r[0]).trim();const id=String(r[4]||'').trim();if(!/^\d{4}-\d{2}-\d{2}$/.test(k)||!id)return;(days[k]=days[k]||{})[id]=normSt(r[3])});
+    const st=wb.Sheets['Settings']?XLSX.utils.sheet_to_json(wb.Sheets['Settings'],{header:1})[0]:null;
+    DEP={areas,days,per:st&&+st[1]>=1?+st[1]:2,at:''};RKEYS=null;saveDep();renderRosterEditor();
+    toast(`Restored ${areas.reduce((n,a)=>n+a.techs.length,0)} technicians and ${Object.keys(days).length} days.`);
+  }catch(e){toast('Could not read that file. Use a file made with Export history.')}
+}
+/* paged list: 15 per page, search, area filter */
+const PAGERS={};
+function pager(id,rows,cols,opt={}){const el=document.getElementById(id);if(!el)return;const P=PAGERS[id]=PAGERS[id]||{page:0,q:'',area:'all'};
+  P.rows=rows;P.cols=cols;P.size=opt.size||15;P.empty=opt.empty||'Nothing to show.';
+  const areas=[...new Set(rows.map(r=>r.area))].filter(Boolean).sort();if(P.area!=='all'&&!areas.includes(P.area))P.area='all';
+  if(!rows.length){el.innerHTML=`<div class="small" style="padding:8px 0">${P.empty}</div>`;return}
+  el.innerHTML=`<div class="pg-tools"><input type="search" id="${id}_q" data-pg="${id}" data-act="q" value="${esc(P.q)}" placeholder="Search ID, technician, type, status…" aria-label="Search list"><select id="${id}_a" data-pg="${id}" data-act="area" aria-label="Filter by area"><option value="all">All areas</option>${areas.map(a=>`<option ${a===P.area?'selected':''} value="${esc(a)}">${esc(a)}</option>`).join('')}</select><span class="small" id="${id}_n"></span></div><div class="tbl" id="${id}_b"></div><div class="pg-nav" id="${id}_nav"></div>`;
+  drawPager(id)}
+function drawPager(id){const P=PAGERS[id];const q=P.q.trim().toLowerCase();let rs=P.rows;if(P.area!=='all')rs=rs.filter(r=>r.area===P.area);if(q)rs=rs.filter(r=>r.text.includes(q));
+  const pages=Math.max(1,Math.ceil(rs.length/P.size));if(P.page>=pages)P.page=pages-1;if(P.page<0)P.page=0;const sl=rs.slice(P.page*P.size,(P.page+1)*P.size);
+  document.getElementById(id+'_n').textContent=`${fmt(rs.length)} of ${fmt(P.rows.length)}`;
+  document.getElementById(id+'_b').innerHTML=sl.length?`<table><thead><tr>${P.cols.map(c=>`<th class="${c.n?'n':''}">${c.h}</th>`).join('')}</tr></thead><tbody>${sl.map(r=>`<tr>${r.cells.map((c,i)=>`<td class="${P.cols[i].n?'n':P.cols[i].cls||''}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`:'<div class="small" style="padding:8px 0">No match.</div>';
+  document.getElementById(id+'_nav').innerHTML=pages>1?`<button class="btn" type="button" data-pg="${id}" data-act="prev" ${P.page?'':'disabled'}>‹ Prev</button><span>Page ${P.page+1} of ${pages}</span><button class="btn" type="button" data-pg="${id}" data-act="next" ${P.page<pages-1?'':'disabled'}>Next ›</button>`:''}
+document.addEventListener('input',e=>{const el=e.target;if(el.dataset&&el.dataset.pg&&el.dataset.act==='q'){const P=PAGERS[el.dataset.pg];P.q=el.value;P.page=0;drawPager(el.dataset.pg)}});
+document.addEventListener('change',e=>{const el=e.target;if(el.dataset&&el.dataset.pg&&el.dataset.act==='area'){const P=PAGERS[el.dataset.pg];P.area=el.value;P.page=0;drawPager(el.dataset.pg)}});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-pg][data-act=prev],[data-pg][data-act=next]');if(!b)return;const P=PAGERS[b.dataset.pg];P.page+=b.dataset.act==='next'?1:-1;drawPager(b.dataset.pg)});
+const rowText=(...a)=>a.map(x=>String(x||'')).join(' ').toLowerCase();
+function countTable(title,map,total,max=6){const arr=[...map].sort((a,b)=>b[1]-a[1]);const top=arr.slice(0,max),rest=arr.slice(max).reduce((s,x)=>s+x[1],0);const mx=top.length?top[0][1]:1;
+  return `<div><h4>${title}</h4><table><tbody>${top.map(([k,n])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(n)}</td><td class="n small">${fmt(pct(n,total),0)}%<span class="bar-i" style="width:${Math.round(40*n/mx)}px"></span></td></tr>`).join('')}${rest?`<tr><td class="small">Others (${arr.length-max})</td><td class="n">${fmt(rest)}</td><td class="n small">${fmt(pct(rest,total),0)}%</td></tr>`:''}</tbody></table></div>`}
+/* ---------- PC 2: unpaid tickets, find the problem, get the solution ---------- */
+const BT={file:null,sheet:null,map:{},groups:{},days:30};
+const BT_ROLES=[['id','Ticket / activity ID',[/activity\s*id/i,/ofs.*id/i,/ticket/i,/work\s*order|w\.?o\.?\s*(no|#)/i,/order\s*(no|#|id)/i,/\bso\b/i,/job\s*(no|id)/i,/\bid\b/i]],
+  ['status','Payment status',[/payment\s*status/i,/paid/i,/billing\s*status/i,/collection/i,/status/i]],
+  ['amount','Amount',[/amount/i,/billed/i,/price/i,/total/i,/rate/i,/php|peso/i]],
+  ['remarks','Remarks / reason',[/reject/i,/dispute/i,/reason/i,/remark/i,/comment/i,/note/i,/finding/i]],
+  ['bdate','Billing date',[/bill(ing|ed)?\s*date/i,/invoice\s*date/i,/date\s*(billed|submitted)/i,/submitted/i,/date/i]]];
+const PAYC=['Paid','Pending','Rejected'];
+function payClass(v){const s=String(v||'').toLowerCase().trim();if(BT.groups[v]!=null)return BT.groups[v];if(!s)return 'Pending';
+  if(/unpaid|not\s*paid|for\s*payment|for\s*collection|unsettled/.test(s))return 'Pending';
+  if(/reject|disput|return|denied|disallow|invalid|cancel|hold|deduct/.test(s))return 'Rejected';
+  if(/paid|settled|collected|cleared|received|remitted/.test(s))return 'Paid';return 'Pending'}
+const normId=v=>String(v==null?'':v).trim().replace(/\.0+$/,'').replace(/\s+/g,'').replace(/^0+(?=\d)/,'').toUpperCase();
+function btAutoMap(sh){const used=new Set(),m={};BT_ROLES.forEach(([k,,rx])=>{for(const r of rx){const h=sh.headers.find(h=>!used.has(h)&&r.test(h));if(h){m[k]=h;used.add(h);break}}});return m}
+async function importBT(file){
+  if(!window.XLSX){toast('The Excel reader did not load.');return}
+  try{const f=await parseFile(file);const cands=f.sheets.filter(s=>s.rows.length&&!s.pivot);if(!cands.length){toast('No data rows found in that file.');return}
+    const scored=cands.map(s=>({s,score:(s.headers.some(h=>/id|ticket|order/i.test(h))?100000:0)+s.rows.length})).sort((a,b)=>b.score-a.score);
+    BT.file=f;BT.sheet=scored[0].s;const sig='bt|'+BT.sheet.headers.slice(0,40).join('|').toLowerCase();const saved=ls.get('i8ar.btfmt',{})[sig];
+    BT.map=saved&&saved.map?Object.fromEntries(Object.entries(saved.map).filter(([,h])=>BT.sheet.headers.includes(h))):btAutoMap(BT.sheet);BT.groups=saved&&saved.groups||{};BT.sig=sig;
+    renderBTSetup();if(current)renderReport();toast(`Billing tracker loaded: ${fmt(BT.sheet.rows.length)} rows from "${BT.sheet.name}".`)}
+  catch(e){toast('Could not read that file. Use an Excel or CSV billing tracker.')}}
+function saveBTFmt(){if(!BT.sig)return;const all=ls.get('i8ar.btfmt',{});all[BT.sig]={map:BT.map,groups:BT.groups};ls.set('i8ar.btfmt',all)}
+function btRecords(){const sh=BT.sheet;if(!sh||!BT.map.id)return null;const ix=k=>BT.map[k]?sh.headers.indexOf(BT.map[k]):-1;const I={id:ix('id'),st:ix('status'),am:ix('amount'),rm:ix('remarks'),bd:ix('bdate')};
+  const by=new Map();sh.rows.forEach(r=>{const id=normId(r[I.id]);if(!id)return;const st=I.st>=0&&!blank(r[I.st])?String(r[I.st]).trim():'';
+    by.set(id,{id,raw:r[I.id],st,cls:payClass(st),amount:I.am>=0?toNum(r[I.am]):null,remarks:I.rm>=0&&!blank(r[I.rm])?String(r[I.rm]).trim():'',bdate:I.bd>=0?toDate(r[I.bd],true):null})});return by}
+const SOL={
+  rej:['Rejected or disputed by client','Check the rejection reason, complete the missing documents or corrections, then resubmit or file a dispute with Finance.'],
+  amt:['Billed amount differs from the rate card','Correct the billed amount to match the rate card and reissue the billing.'],
+  over:['Payment overdue','Follow up with Finance and the client. Confirm the invoice was received and get a payment date.'],
+  wait:['Awaiting payment','Billed and still within the payment period. Monitor until the due date.'],
+  inc:['Incomplete record, cannot be billed','Complete the missing ID, date, area or technician in OFSC, then add the ticket to the billing tracker.'],
+  nob:['Completed but not yet billed','Add the ticket to the billing tracker and include it in the next billing submission.'],
+  notc:['Billed but not completed in OFSC','Validate the job on site or with the technician. Correct the OFSC status, or remove the ticket from billing.']};
+function unpaidCompute(st){
+  const by=btRecords();if(!by)return null;const rates=getRates();const t0=today0();const N=BT.days;
+  const rs=st.rs||[];const done=rs.filter(r=>r.group==='Completed');const items=[];let paid=0,paidAmt=0;
+  const add=(r,b,key,extra)=>{const amt=b&&b.amount!=null?b.amount:rateFor(rates,r.type);items.push({r,b,key,problem:SOL[key][0]+(extra||''),solution:SOL[key][1],amt})};
+  done.forEach(r=>{const b=r.id?by.get(normId(r.id)):null;
+    if(b&&b.cls==='Paid'){paid++;paidAmt+=b.amount!=null?b.amount:(rateFor(rates,r.type)||0);return}
+    if(b&&b.cls==='Rejected'){add(r,b,'rej',b.remarks?`: ${b.remarks}`:'');return}
+    if(b){const rt=rateFor(rates,r.type);if(b.amount!=null&&rt!=null&&Math.abs(b.amount-rt)>0.009){add(r,b,'amt',` (${peso(b.amount)} vs ${peso(rt)})`);return}
+      const ref=b.bdate||r.date;const age=ref?Math.floor((t0-ref)/DAY):null;if(age!=null&&age>N){add(r,b,'over',` (${age} days)`);return}add(r,b,'wait');return}
+    const incomplete=!r.id||!r.date||!r.area||r.area==='(Blank)'||isBucket(r.resource);add(r,null,incomplete?'inc':'nob')});
+  // billed but OFSC not completed (same period)
+  rs.forEach(r=>{if(r.group==='Completed'||!r.id)return;const b=by.get(normId(r.id));if(b&&b.cls!=='Paid')add(r,b,'notc',` (OFSC: ${r.status})`)});
+  const probs=new Map();items.forEach(x=>{const k=SOL[x.key][0];const o=probs.get(k)||{k,key:x.key,n:0,amt:0,priced:0,solution:x.solution};o.n++;if(x.amt!=null){o.amt+=x.amt;o.priced++}probs.set(k,o)});
+  const unpaid=items.filter(x=>x.key!=='notc');
+  const rr=new Map();items.filter(x=>x.key==='rej'&&x.b&&x.b.remarks).forEach(x=>rr.set(x.b.remarks,(rr.get(x.b.remarks)||0)+1));
+  return {done:done.length,paid,paidAmt,items,unpaid,probs:[...probs.values()].sort((a,b)=>b.n-a.n),unpaidAmt:unpaid.reduce((s,x)=>s+(x.amt||0),0),
+    rej:items.filter(x=>x.key==='rej').length,nob:items.filter(x=>x.key==='nob'||x.key==='inc').length,over:items.filter(x=>x.key==='over').length,rejReasons:rr,trackerRows:by.size};
+}
+function renderBTSetup(){
+  const has=!!BT.sheet;$('#upFileName').textContent=has?`${BT.file.name} › ${BT.sheet.name} · ${fmt(BT.sheet.rows.length)} rows`:'';$('#upClear').hidden=!has;$('#upSetup').hidden=!has;
+  if(!has)return;
+  $('#upMap').innerHTML=BT_ROLES.map(([k,l])=>`<div class="field"><label for="bt_${k}">${l}</label><select id="bt_${k}" data-bt="${k}"><option value="">— Not used —</option>${BT.sheet.headers.map(h=>`<option ${h===BT.map[k]?'selected':''} value="${esc(h)}">${esc(h)}</option>`).join('')}</select></div>`).join('')+
+    `<div class="field"><label for="btDays">Overdue after (days)</label><input type="text" inputmode="numeric" id="btDays" value="${BT.days}"></div>`;
+  const ix=BT.map.status?BT.sheet.headers.indexOf(BT.map.status):-1;const c=new Map();if(ix>=0)BT.sheet.rows.forEach(r=>{const v=blank(r[ix])?'':String(r[ix]).trim();c.set(v,(c.get(v)||0)+1)});
+  const vals=[...c].sort((a,b)=>b[1]-a[1]).slice(0,30);
+  $('#upGroups').innerHTML=ix<0?'<div class="small">Choose the Payment status column to group its values.</div>':vals.map(([v,n],i)=>{const g=payClass(v);return `<div class="sg-row"><span class="dot" style="background:var(--${g==='Paid'?'good':g==='Rejected'?'crit':'warn'})"></span><span class="v" title="${esc(v||'(Blank)')}">${esc(v||'(Blank)')}</span><span class="c">${fmt(n)}</span><select data-btg="${i}" aria-label="Group for ${esc(v||'blank')}">${PAYC.map(x=>`<option ${x===g?'selected':''}>${x}</option>`).join('')}</select></div>`}).join('');
+  $('#upGroups').dataset.vals=JSON.stringify(vals.map(x=>x[0]));
+}
+function renderUnpaid(st){
+  const u=st.unpaid=unpaidCompute(st);
+  $('#upEmpty').hidden=!!u;$('#upBody').hidden=!u;
+  if(!u){$('#upSub').textContent='Import your billing tracker to start';return}
+  $('#upSub').textContent=`${fmt(u.trackerRows)} tickets in the tracker · matched by ${BT.map.id}`;
+  $('#upKpis').innerHTML=[kpiCard('Completed tickets',fmt(u.done),'in this period'),kpiCard('Paid',fmt(u.paid),`${fp(pct(u.paid,u.done))} of completed${u.paidAmt?' · '+peso(u.paidAmt):''}`,'','good'),
+    kpiCard('Unpaid',fmt(u.unpaid.length),u.unpaidAmt?peso(u.unpaidAmt)+' estimated':'set rates or map Amount for pesos','',u.unpaid.length?'alert':''),
+    kpiCard('Rejected / disputed',fmt(u.rej),'need resubmission'),kpiCard('Not yet billed',fmt(u.nob),'completed, not in the tracker')].join('');
+  $('#upProbTbl').innerHTML=u.probs.length?`<table><thead><tr><th>Problem</th><th class="n">Tickets</th><th class="n">Amount</th><th>Solution</th></tr></thead><tbody>${u.probs.map(p=>`<tr><td><b>${esc(p.k)}</b></td><td class="n">${fmt(p.n)}</td><td class="n">${p.priced?peso(p.amt):'—'}</td><td class="small" style="min-width:220px">${esc(p.solution)}</td></tr>`).join('')}</tbody></table>${u.rejReasons.size?`<div class="nd-sum" style="margin-top:12px">${countTable('Top rejection reasons',u.rejReasons,u.rej,5)}</div>`:''}`:'<div class="small">Every completed ticket in this period is paid.</div>';
+  pager('upList',u.items.map(x=>({area:x.r.area,text:rowText(x.r.id,x.r.area,x.r.resource,x.r.type,x.problem,x.b&&x.b.st),cells:[esc(x.r.id)||'—',esc(x.r.area),esc(x.r.type),x.r.date?dLabel(x.r.date):'—',x.b?esc(x.b.st||'(blank)'):'<span class="small">not in tracker</span>',x.amt!=null?peso(x.amt):'—',`<b>${esc(x.problem)}</b>`,`<span class="small">${esc(x.solution)}</span>`]})),
+    [{h:'Activity ID',cls:'num'},{h:'Area'},{h:'Activity type'},{h:'Completed',cls:'num'},{h:'Billing status'},{h:'Amount',n:1},{h:'Problem'},{h:'Solution'}],{empty:'No unpaid tickets.'});
+}
+function upCfg(u,P,font){if(!u||!u.probs.length)return null;const base=baseOpts(P,font);const col={rej:P.crit,amt:P.warn,over:P.crit,wait:P.muted,inc:P.warn,nob:P.c3,notc:P.cat[3]};
+  return {type:'bar',data:{labels:u.probs.map(p=>p.k),datasets:[{label:'Tickets',data:u.probs.map(p=>p.n),backgroundColor:u.probs.map(p=>col[p.key]||P.accent),borderRadius:2,maxBarThickness:22}]},options:{...base,indexAxis:'y',scales:scales(P,false,true),plugins:{...base.plugins,legend:{display:false}}}}}
+function renderOps(st){
+  const o=st.ops,D=st.deltas||{};
+  st.tix=tixCompute(st.rs||[]);renderTix(st);renderDep(st);
+  $('#odDays').value=o.thr;
+  $('#opsKpis').innerHTML=(st.total||o.backlog.length)?[
+    kpiCard('Activities',fmt(st.total),'in this period',dHtml(st,D.total)),
+    kpiCard('Completed',fmt(st.groups.Completed),fp(pct(st.groups.Completed,st.total))+' of activities',dHtml(st,D.done)),
+    kpiCard('Open backlog',fmt(o.backlog.length),'as of '+dLabel(o.asOf)),
+    kpiCard('Overdue',fmt(o.overdue.length),`open over ${o.thr} days · ${fp(pct(o.overdue.length,o.backlog.length))} of backlog`,'',o.overdue.length?'alert':''),
+    kpiCard('Unassigned',fmt(o.unassigned.length),'open jobs still in a bucket'),
+    kpiCard('Active technicians',fmt(o.active),o.active?`${fmt(o.techTotal/o.active,1)} activities each`:'map a Resource column')
+  ].join(''):`<div class="empty" style="grid-column:1/-1">No records for this period. Import a file or pick another period.</div>`;
+  $('#opsDailySub').textContent=o.daily?`Activities per ${o.daily.gran} by status`:'Map a Date column to see daily accomplishment';
+  $('#opsAgeSub').textContent=`${fmt(o.backlog.length)} open activities as of ${dLabel(o.asOf)} · red bars are overdue`;
+  $('#opsAreaSub').textContent='Delayed = rate under 60% or 30%+ of backlog overdue · At risk = any overdue or rate under 80%';
+  const sc={'On track':'good','At risk':'warn','Delayed':'crit'};
+  const wfc=new Map();const hasR=rosterKeys().size>0;if(hasR)(st.rs||[]).forEach(r=>{const w=wfOf(r);const x=wfc.get(r.area)||{ih:0,sc:0};if(w==='In-house')x.ih++;else if(w==='Subcon')x.sc++;wfc.set(r.area,x)});
+  $('#opsAreaTbl').innerHTML=`<table><thead><tr><th>Area</th><th class="n">Activities</th>${hasR?'<th class="n">In-house</th><th class="n">Subcon</th>':''}<th class="n">Done</th><th class="n">Rate</th><th class="n">Backlog</th><th class="n">Overdue</th><th class="n">Techs</th><th>Status</th></tr></thead><tbody>${o.areas.map(a=>`<tr><td>${esc(a.k)}</td><td class="n">${fmt(a.o.total)}</td>${hasR?`<td class="n">${fmt((wfc.get(a.k)||{}).ih||0)}</td><td class="n">${fmt((wfc.get(a.k)||{}).sc||0)}</td>`:''}<td class="n">${fmt(a.o.Completed)}</td><td class="n">${a.rate==null?'—':fp(a.rate)}</td><td class="n">${fmt(a.backlog)}</td><td class="n">${a.overdue?`<span class="age od">${fmt(a.overdue)}</span>`:'0'}</td><td class="n">${fmt(a.techs)}</td><td>${a.status?pill(a.status,sc[a.status]):'—'}</td></tr>`).join('')}</tbody></table>`;
+  $('#opsPendSub').textContent=o.backlog.length?`Oldest first · ${fmt(o.backlog.length)} open · ${fmt(o.overdue.length)} overdue · Excel export has the full list`:'No open activities';
+  pager('opsPendTbl',o.backlog.map(x=>({area:x.r.area,text:rowText(x.r.id,x.r.area,x.r.resource,x.r.type,x.r.status),cells:[esc(x.r.id)||'—',esc(x.r.area),esc(x.r.resource),esc(x.r.type),esc(x.r.status),dLabel(x.r.date),`<span class="age ${x.age>o.thr?'od':''}">${fmt(x.age)}</span>`]})),
+    [{h:'Activity ID',cls:'num'},{h:'Area'},{h:'Technician / bucket'},{h:'Activity type'},{h:'Status'},{h:'Date',cls:'num'},{h:'Age (days)',n:1}],{empty:'Nothing pending.'});
+  const R=o.res.slice(0,20);
+  $('#opsResSub').textContent=state.map.resource?(o.res.length?`Top ${R.length} of ${fmt(o.res.length)} technicians by activities · buckets left out`:'No technicians found, only buckets'):'Map a Resource column to see workload';
+  $('#opsResTbl').innerHTML=R.length?`<table><thead><tr><th>Technician</th><th>Main area</th><th class="n">Activities</th><th class="n">Done</th><th class="n">Not done</th><th class="n">Open</th><th class="n">Days worked</th><th class="n">Per day</th><th class="n">Rate</th><th class="n">Overdue held</th></tr></thead><tbody>${R.map(r=>`<tr><td>${esc(r.k)}</td><td>${esc(r.area)}</td><td class="n">${fmt(r.o.total)}</td><td class="n">${fmt(r.o.Completed)}</td><td class="n">${fmt(r.o['Not completed'])}</td><td class="n">${fmt(r.o.Open)}</td><td class="n">${fmt(r.days)}</td><td class="n">${r.perDay==null?'—':fmt(r.perDay,1)}</td><td class="n">${r.rate==null?'—':fp(r.rate)}</td><td class="n">${r.overdue?`<span class="age od">${r.overdue}</span>`:'0'}</td></tr>`).join('')}</tbody></table>`:'';
+  const {F,A}=opsInsights(st,o);o.ins={F,A};
+  $('#opsFind').innerHTML=F.map(x=>`<li>${x}</li>`).join('');$('#opsAtt').innerHTML=A.map(x=>`<li>${x}</li>`).join('');
+}
+
+function billCompute(st,rs){
+  const pi=st.pi,rates=getRates();
+  const hasRates=Object.keys(rates).some(k=>rateFor(rates,k)!=null);
+  const calc=list=>{const done=list.filter(r=>r.group==='Completed');let amount=0,priced=0;done.forEach(r=>{const v=rateFor(rates,r.type);if(v!=null){amount+=v;priced++}});return {done,amount,priced}};
+  const cur=calc(rs);const done=cur.done;
+  const byType=new Map(),byArea=new Map();
+  const ga=k=>{let a=byArea.get(k);if(!a){a={n:0,amt:0,nd:0,cx:0};byArea.set(k,a)}return a};
+  done.forEach(r=>{const v=rateFor(rates,r.type);const t=byType.get(r.type)||{n:0,amt:0,rate:v};t.n++;if(v!=null)t.amt+=v;byType.set(r.type,t);const a=ga(r.area);a.n++;if(v!=null)a.amt+=v});
+  rs.forEach(r=>{if(r.group==='Not completed')ga(r.area).nd++;else if(r.group==='Cancelled')ga(r.area).cx++});
+  const ok=r=>r.id&&r.date&&r.area&&r.area!=='(Blank)'&&!isBucket(r.resource);
+  const comp=[
+    {k:'Missing activity ID',n:state.map.id?done.filter(r=>!r.id).length:null,fix:'Cannot be billed until the ID is filled in.'},
+    {k:'Missing or invalid date',n:done.filter(r=>!r.date).length,fix:'Needed to place the ticket in a billing period.'},
+    {k:'Missing area',n:done.filter(r=>!r.area||r.area==='(Blank)').length,fix:'Needed for billing by area or project.'},
+    {k:'No technician (still in bucket)',n:state.map.resource?done.filter(r=>isBucket(r.resource)).length:null,fix:'Completed but not assigned to anyone. Confirm who did the job.'},
+    {k:'Activity type has no rate',n:hasRates?done.filter(r=>rateFor(rates,r.type)==null).length:null,fix:'Add the price in the Rate card.'}
+  ];
+  const ready=done.filter(ok).length;
+  const nd=rs.filter(r=>r.group==='Not completed').sort((a,b)=>(b.date||0)-(a.date||0));
+  const cx=rs.filter(r=>r.group==='Cancelled').length;
+  const prev=st.prevRs&&st.prevRs.length?calc(st.prevRs):null;
+  const prevNd=st.prevRs?st.prevRs.filter(r=>r.group==='Not completed').length:0;
+  // completed per week by area, 8 weeks up to period end
+  let week=null;const pool=poolRecs().filter(r=>r.group==='Completed'&&r.date);
+  if(pool.length){let end=pi?pi.to:null;if(!end){let mx=pool[0].date;pool.forEach(r=>{if(r.date>mx)mx=r.date});end=addDays(mx,1)}
+    const last=weekStart(addDays(end,-1));const weeks=[];for(let i=7;i>=0;i--)weeks.push(addDays(last,-7*i));const lo=weeks[0],hi=addDays(last,7);
+    const win=pool.filter(r=>r.date>=lo&&r.date<hi);
+    if(win.length){const vol=new Map();win.forEach(r=>vol.set(r.area,(vol.get(r.area)||0)+1));const areas=[...vol].sort((x,y)=>y[1]-x[1]).map(x=>x[0]);
+      const top=areas.slice(0,6),other=areas.length>6;const cell=new Map();
+      win.forEach(r=>{const a=top.includes(r.area)?r.area:'Other areas';const k=a+'|'+dKey(weekStart(r.date));cell.set(k,(cell.get(k)||0)+1)});
+      const names=other?[...top,'Other areas']:top;
+      week={labels:weeks.map(w=>`${MON[w.getMonth()]} ${w.getDate()}`),series:names.map(n=>({name:n,vals:weeks.map(w=>cell.get(n+'|'+dKey(w))||0)}))}}}
+  const typesAll=new Map();poolRecs().forEach(r=>{if(r.group==='Completed')typesAll.set(r.type,(typesAll.get(r.type)||0)+1)});
+  return {rates,hasRates,done,amount:cur.amount,priced:cur.priced,byType,byArea,comp,ready,nd,cx,prev,prevNd,week,
+    rateTypes:[...typesAll].sort((a,b)=>b[1]-a[1]).slice(0,40).map(x=>x[0])};
+}
+function billInsights(st,b){
+  const F=[],A=[];const n=b.done.length;
+  F.push(`<b>${fmt(n)}</b> completed tickets in this period. <b>${fmt(b.ready)}</b> (${fp(pct(b.ready,n))}) pass the validation check and are ready for billing.`);
+  if(b.hasRates){F.push(`Billable amount: <b>${peso(b.amount)}</b> from ${fmt(b.priced)} priced tickets.`);
+    const top=[...b.byType].sort((x,y)=>y[1].amt-x[1].amt)[0];if(top&&top[1].amt)F.push(`Highest billing activity type: <b>${esc(top[0])}</b> at ${peso(top[1].amt)} (${fmt(top[1].n)} tickets).`)}
+  else F.push('No rates set yet. Add the price per activity type in the Rate card to see billing amounts.');
+  const tt=[...b.byType].sort((x,y)=>y[1].n-x[1].n)[0];if(tt)F.push(`Most completed activity type: <b>${esc(tt[0])}</b> with ${fmt(tt[1].n)} tickets.`);
+  const ta=[...b.byArea].filter(([,a])=>a.n).sort((x,y)=>y[1].n-x[1].n);if(ta.length>1)F.push(`Area with the most completed tickets: <b>${esc(ta[0][0])}</b> (${fmt(ta[0][1].n)}).`);
+  if(st.pi&&b.prev){const d=dlt(n,b.prev.done.length,'pct',true);if(d)F.push(`Completed tickets ${d.flat?'unchanged':d.d>0?'up':'down'} ${d.flat?'':fmt(Math.abs(d.d),1)+'% '}versus ${st.pi.pname} (${fmt(b.prev.done.length)} → ${fmt(n)}).`)}
+  b.comp.forEach(c=>{if(c.n)A.push(`<b>${fmt(c.n)}</b> completed tickets: ${c.k.toLowerCase()}. ${c.fix}`)});
+  if(b.nd.length)A.push(`<b>${fmt(b.nd.length)}</b> tickets were not done or rejected. Check if any are billing disputes or need re-validation.`);
+  if(b.cx)A.push(`${fmt(b.cx)} cancelled tickets. Confirm with the client that these are not billable.`);
+  if(!A.length)A.push('All completed tickets pass the validation check.');
+  return {F,A};
+}
+let ratesKey='';
+function renderBill(st){
+  const b=st.bill,D=st.deltas||{};const n=b.done.length;
+  const dAmt=st.pi&&b.hasRates?(b.prev?dlt(b.amount,b.prev.amount,'pct',true):null):undefined;
+  const dNd=st.pi?dlt(b.nd.length,b.prevNd,'pct',false):undefined;
+  $('#billKpis').innerHTML=st.total?[
+    kpiCard('Completed tickets',fmt(n),'for validation and billing',dHtml(st,D.done)),
+    kpiCard('Ready for billing',fmt(b.ready),`${fp(pct(b.ready,n))} pass the validation check`,'',b.ready<n?'':'good'),
+    kpiCard('Billable amount',b.hasRates?peso(b.amount):'—',b.hasRates?`${fmt(b.priced)} of ${fmt(n)} tickets priced`:'set prices in the Rate card',dHtml(st,dAmt),'hero'),
+    kpiCard('Not done / rejected',fmt(b.nd.length),'possible disputes or re-work',dHtml(st,dNd)),
+    kpiCard('Cancelled',fmt(b.cx),'confirm not billable',dHtml(st,D.cx))
+  ].join(''):`<div class="empty" style="grid-column:1/-1">No records for this period. Import a file or pick another period.</div>`;
+  $('#billWeekSub').textContent=b.week?`Last 8 weeks up to ${st.pi?st.pi.label:'the latest date'} · stacked by area`:'Map a Date column to see weekly volume';
+  const types=[...b.byType].sort((x,y)=>y[1].n-x[1].n);
+  $('#billTypeSub').textContent=b.hasRates?'Amount = completed tickets × rate':'Ticket counts only. Add rates below to compute amounts.';
+  $('#billTypeTbl').innerHTML=types.length?`<table><thead><tr><th>Activity type</th><th class="n">Completed</th><th class="n">Share</th><th class="n">Rate</th><th class="n">Amount</th></tr></thead><tbody>${types.map(([k,t])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(t.n)}</td><td class="n">${fp(pct(t.n,n))}</td><td class="n">${t.rate==null?'—':peso(t.rate)}</td><td class="n">${t.rate==null?'—':peso(t.amt)}</td></tr>`).join('')}<tr class="total"><td>Total</td><td class="n">${fmt(n)}</td><td class="n">100%</td><td class="n"></td><td class="n">${b.hasRates?peso(b.amount):'—'}</td></tr></tbody></table>`:'<div class="small">No completed tickets in this period.</div>';
+  const areas=[...b.byArea].sort((x,y)=>y[1].n-x[1].n);let tN=0,tA=0,tD=0,tC=0;areas.forEach(([,a])=>{tN+=a.n;tA+=a.amt;tD+=a.nd;tC+=a.cx});
+  $('#billAreaTbl').innerHTML=areas.length?`<table><thead><tr><th>Area</th><th class="n">Completed</th><th class="n">Not done</th><th class="n">Cancelled</th><th class="n">Amount</th></tr></thead><tbody>${areas.map(([k,a])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(a.n)}</td><td class="n">${fmt(a.nd)}</td><td class="n">${fmt(a.cx)}</td><td class="n">${b.hasRates?peso(a.amt):'—'}</td></tr>`).join('')}<tr class="total"><td>Total</td><td class="n">${fmt(tN)}</td><td class="n">${fmt(tD)}</td><td class="n">${fmt(tC)}</td><td class="n">${b.hasRates?peso(tA):'—'}</td></tr></tbody></table>`:'';
+  $('#billCompTbl').innerHTML=`<table><thead><tr><th>Check</th><th class="n">Tickets</th><th>Result</th></tr></thead><tbody>${b.comp.map(c=>`<tr><td>${c.k}</td><td class="n">${c.n==null?'—':fmt(c.n)}</td><td>${c.n==null?pill('Not checked','neu'):c.n?pill('Fix','crit'):pill('OK','good')}</td></tr>`).join('')}</tbody></table>`;
+  $('#billNdSub').textContent=b.nd.length?`${fmt(b.nd.length)} tickets this period · newest first in the list · Excel export has the full list`:'None this period';
+  const ndA=new Map(),ndT=new Map(),ndR=new Map(),ndS=new Map();b.nd.forEach(r=>{ndA.set(r.area,(ndA.get(r.area)||0)+1);ndT.set(r.type,(ndT.get(r.type)||0)+1);ndS.set(r.status,(ndS.get(r.status)||0)+1);if(r.reason)ndR.set(r.reason,(ndR.get(r.reason)||0)+1)});
+  $('#billNdSum').innerHTML=b.nd.length?countTable('By area',ndA,b.nd.length)+countTable('By activity type',ndT,b.nd.length)+(ndR.size?countTable('Top reasons',ndR,b.nd.length,5):countTable('By status',ndS,b.nd.length)):'<div class="small">No rejected or not done tickets this period.</div>';
+  $('#billNdDet').hidden=!b.nd.length;
+  pager('billNdTbl',b.nd.map(r=>({area:r.area,text:rowText(r.id,r.area,r.resource,r.type,r.status,r.reason),cells:[esc(r.id)||'—',esc(r.area),esc(r.resource),esc(r.type),esc(r.status),r.date?dLabel(r.date):'—']})),
+    [{h:'Activity ID',cls:'num'},{h:'Area'},{h:'Technician / bucket'},{h:'Activity type'},{h:'Status'},{h:'Date',cls:'num'}],{empty:'No rejected or not done tickets.'});
+  const key=b.rateTypes.join('|');
+  if(key!==ratesKey){ratesKey=key;
+    $('#rates').innerHTML=b.rateTypes.length?b.rateTypes.map((t,i)=>`<label class="rate-row" for="rate_${i}"><span title="${esc(t)}">${esc(t)}</span><input type="number" min="0" step="0.01" id="rate_${i}" data-rt="${i}" placeholder="₱ 0" value="${rateFor(b.rates,t)??''}"></label>`).join(''):'<div class="small">No completed activity types yet.</div>';
+    $('#rates').dataset.types=JSON.stringify(b.rateTypes)}
+  renderUnpaid(st);
+  const {F,A}=billInsights(st,b);b.ins={F,A};
+  $('#billFind').innerHTML=F.map(x=>`<li>${x}</li>`).join('');$('#billAtt').innerHTML=A.map(x=>`<li>${x}</li>`).join('');
+}
+function showTab(){
+  ['ops','bill','kpi','pmo'].forEach(t=>{$('#pane-'+t).hidden=t!==state.tab;$('#tab-'+t).setAttribute('aria-selected',String(t===state.tab));$('#tab-'+t).tabIndex=t===state.tab?0:-1});
+}
+function baseOpts(P,font){return {responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{labels:{color:P.fg2,boxWidth:10,boxHeight:10,font}},tooltip:{titleFont:font,bodyFont:font}}}}
+function opsCfgs(o,P,font){
+  const base=baseOpts(P,font);const out={};
+  if(o.daily){const used=GROUPS.filter(g=>o.daily.rows.some(r=>r&&r[g]));
+    out.daily={type:'bar',data:{labels:o.daily.labels,datasets:used.map(g=>({label:g,data:o.daily.rows.map(r=>r?r[g]:0),backgroundColor:P[GCOL[g]],borderRadius:1,maxBarThickness:34}))},
+      options:{...base,scales:scales(P,true,false),plugins:{...base.plugins,legend:{position:'top',align:'end',labels:base.plugins.legend.labels}}}}}
+  out.aging={type:'bar',data:{labels:o.aging.map(a=>a.l),datasets:[{label:'Open activities',data:o.aging.map(a=>a.n),backgroundColor:o.aging.map(a=>a.hi>o.thr?P.crit:P.warn),borderRadius:2,maxBarThickness:46}]},
+    options:{...base,scales:scales(P,false,false),plugins:{...base.plugins,legend:{display:false}}}};
+  return out;
+}
+function billCfgs(b,P,font){
+  const base=baseOpts(P,font);const out={};
+  if(b.week)out.week={type:'bar',data:{labels:b.week.labels,datasets:b.week.series.map((s,i)=>({label:s.name,data:s.vals,backgroundColor:s.name==='Other areas'?P.muted:P.cat[i%6],borderRadius:1,maxBarThickness:40}))},
+    options:{...base,scales:scales(P,true,false),plugins:{...base.plugins,legend:{position:'bottom',labels:base.plugins.legend.labels}}}};
+  return out;
+}
+/* ---------- Executive PMO Update (Week 40 deck order) ---------- */
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);const y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y0)/864e5+1)/7)}
+let WK=null;
+function getWk(){if(!WK){WK=ls.get('i8ar.weekly',null)||{};WK.targets=WK.targets||{ct:600,eff:2};WK.weeks=WK.weeks||{};WK.fuelGroups=WK.fuelGroups||[{name:'Laguna / Batangas',target:2},{name:'Albay / CamSur',target:3}]}return WK}
+function saveWk(){ls.set('i8ar.weekly',getWk())}
+const MON_DEF=[['Maximize deployment within assigned area based on available ticket pipeline','Improve completion output and reduce unused team capacity','Immediate','NEEDS IMPROVEMENT'],['Strengthen daily ticket assignment and dispatch monitoring','Reduce unassigned and RPR/AFD tickets','This week','NEEDS IMPROVEMENT'],['Validate manpower, fleet and material availability per area','Prevent deployment delays and unused capacity','Immediate','GOOD'],['Conduct daily backlog and completion review with area/subcon coordinators','Faster escalation and better completion conversion','Daily','GOOD']];
+const PRI_DEF=[['Maximize productivity within assigned areas','Improve utilization of available teams and increase completed tickets based on actual pipeline',''],['Daily ticket assignment & dispatch alignment','Reduce unassigned/RPR/AFD tickets and improve completion conversion','']];
+const EVALS=['GOOD','NEEDS IMPROVEMENT','POOR','ON HOLD'];
+let pmoWeekKey='';
+function wkRec(create){const W=getWk();let r=W.weeks[pmoWeekKey];if(r||!create)return r||null;
+  const prev=Object.keys(W.weeks).filter(k=>k<pmoWeekKey).sort().pop();const p=prev?W.weeks[prev]:null;
+  r=W.weeks[pmoWeekKey]={mon:p&&p.mon?JSON.parse(JSON.stringify(p.mon)):MON_DEF.map(x=>({action:x[0],outcome:x[1],timing:x[2],ev:x[3]})),pri:p&&p.pri?JSON.parse(JSON.stringify(p.pri)):PRI_DEF.map(x=>({activity:x[0],impact:x[1],deadline:x[2]})),qa:{},ppe:{},fuel:{}};return r}
+function wkView(){const r=wkRec(false);if(r)return r;const W=getWk();const prev=Object.keys(W.weeks).filter(k=>k<pmoWeekKey).sort().pop();const p=prev?W.weeks[prev]:null;
+  return {mon:p&&p.mon?p.mon:MON_DEF.map(x=>({action:x[0],outcome:x[1],timing:x[2],ev:x[3]})),pri:p&&p.pri?p.pri:PRI_DEF.map(x=>({activity:x[0],impact:x[1],deadline:x[2]})),qa:{},ppe:{},fuel:{},_unsaved:true}}
+function depWeek(ws){const D=getDep();const unit=1/(D.per||2);const by=new Map();let total=0,daysRec=0;
+  for(let i=0;i<7;i++){const k=dKey(addDays(ws,i));const m=D.days[k];if(!m)continue;daysRec++;
+    D.areas.forEach(a=>{let t=0;a.techs.forEach(x=>{const s=m[x.id];if(s==='DTY')t+=unit;else if(s==='HALF DAY')t+=unit/2});by.set(a.name,(by.get(a.name)||0)+t);total+=t})}
+  return {by,total,daysRec}}
+function matchArea(name,list){const n=normA(name);let hit=list.find(a=>normA(a)===n);if(hit)return hit;return list.find(a=>{const k=normA(a);return n&&k&&(k.includes(n)||n.includes(k))})||null}
+function pmoCompute(st){
+  const pi=st.pi,T=getWk().targets;const t0=today0();const pool=poolRecs();const fa=state.filters.area;const basePool=state.recs.filter(r=>(!state.rules.dup||!r.dup)&&(fa==='all'||r.area===fa));
+  let anchor;
+  if(pi&&pi.kind==='week')anchor=pi.from;
+  else{let end=pi?addDays(pi.to,-1):null;if(!end||end>t0){let mx=null;pool.forEach(r=>{if(r.date&&r.date<=t0&&(!mx||r.date>mx))mx=r.date});end=mx||t0;if(pi&&addDays(pi.to,-1)<end)end=addDays(pi.to,-1)}anchor=weekStart(end)}
+  pmoWeekKey=dKey(anchor);
+  const weeks=[];for(let i=5;i>=0;i--)weeks.push(addDays(anchor,-7*i));
+  const wl=weeks.map(w=>'Week '+weekNo(w));
+  const areasAll=[...new Set(pool.map(r=>r.area))].filter(a=>a!=='(Blank)');
+  const W=weeks.map(ws=>{const we=addDays(ws,7);const rs=pool.filter(r=>r.date&&r.date>=ws&&r.date<we);
+    const ext=new Map(),done=new Map(),tix=new Map(),open=new Map(),days=new Set();const cfg=tcCfg();
+    rs.forEach(r=>{ext.set(r.area,(ext.get(r.area)||0)+1);days.add(dKey(r.date));const k=tixKind(r,cfg);
+      if(k){tix.set(r.area,(tix.get(r.area)||0)+1)}else if(r.group==='Completed')done.set(r.area,(done.get(r.area)||0)+1);else if(r.group==='Open')open.set(r.area,(open.get(r.area)||0)+1)});
+    const doneAll=rs.filter(r=>r.group==='Completed').length;const doneBy=new Map();rs.forEach(r=>{if(r.group==='Completed')doneBy.set(r.area,(doneBy.get(r.area)||0)+1)});
+    const rsAll=basePool.filter(r=>r.date&&r.date>=ws&&r.date<we&&r.group==='Completed'&&wfOf(r)==='In-house');const doneIn=rsAll.length;const doneInBy=new Map();rsAll.forEach(r=>doneInBy.set(r.area,(doneInBy.get(r.area)||0)+1));
+    const dep=depWeek(ws);return {ws,rs,n:rs.length,ext,done:doneAll,doneBy,doneIn,doneInBy,tix,open,hDone:done,dataDays:days.size,dep,eff:dep.total?doneIn/dep.total:null}});
+  const cur=W[W.length-1],prev=W[W.length-2];
+  const avg=a=>{const v=a.filter(x=>x!=null);return v.length?v.reduce((s,x)=>s+x,0)/v.length:null};
+  // deployment per area per week
+  const D=getDep();const depAreas=D.areas.map(a=>a.name);
+  const depSeries=depAreas.map(a=>({name:a,vals:W.map(w=>w.dep.daysRec?(w.dep.by.get(a)||0):null)}));
+  const depTot=depSeries.map(s=>({name:s.name,total:s.vals.reduce((x,y)=>x+(y||0),0),avg:avg(s.vals)}));const depGrand=depTot.reduce((x,y)=>x+y.total,0);
+  // extracted stacked by area
+  const extVol=new Map();W.forEach(w=>w.ext.forEach((v,k)=>extVol.set(k,(extVol.get(k)||0)+v)));
+  const extAreas=[...extVol].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);const extTop=extAreas.slice(0,6),extOther=extAreas.length>6;
+  const extSeries=[...extTop,...(extOther?['Other areas']:[])].map(a=>({name:a,vals:W.map(w=>a==='Other areas'?[...w.ext].filter(([k])=>!extTop.includes(k)).reduce((s,[,v])=>s+v,0):(w.ext.get(a)||0))}));
+  const extBreak=[...cur.ext].sort((a,b)=>b[1]-a[1]).map(([k,v])=>({k,v,p:pct(v,cur.n)}));
+  // remarks & risks
+  const wn=weekNo(cur.ws),wp=weekNo(prev.ws);const rem=[],risk=[];
+  if(prev.n){const d=cur.n-prev.n;const ch=[...new Set([...cur.ext.keys(),...prev.ext.keys()])].map(k=>({k,d:(cur.ext.get(k)||0)-(prev.ext.get(k)||0)})).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)).filter(x=>x.d!==0&&Math.sign(x.d)===Math.sign(d)).slice(0,2);
+    rem.push(`Week ${wn} extracted tickets ${d===0?'stayed at':d>0?'increased to':'decreased to'} <b>${fmt(cur.n)}</b>${d===0?'':`, ${d>0?'up':'down'} from ${fmt(prev.n)} in Week ${wp}`}${ch.length&&d!==0?`, mainly driven by ${d>0?'higher':'lower'} volumes in ${ch.map(x=>esc(x.k)).join(' and ')}`:''}.`);
+    if(d<0&&pct(-d,prev.n)>=20)risk.push(`Validate the Week ${wn} extraction drop (${fmt(pct(-d,prev.n),1)}%) and confirm whether it is due to actual demand reduction or pipeline/extraction constraints.`)}
+  else rem.push(`Week ${wn} extracted tickets: <b>${fmt(cur.n)}</b>. No data for Week ${wp} to compare against.`);
+  if(extBreak.length){const t=extBreak.slice(0,2);rem.push(`${esc(t[0].k)} was the largest contributor at ${fmt(t[0].p,2)}%${t[1]?`, followed by ${esc(t[1].k)} at ${fmt(t[1].p,2)}%`:''} of total extracted tickets.`);
+    const rest=extBreak.slice(2);if(rest.length)rem.push(`${rest.map(x=>`${esc(x.k)} ${fmt(x.p,2)}%`).join(', ')}.`)}
+  const conv=pct(cur.done,cur.n);rem.push(`${fmt(cur.done)} of ${fmt(cur.n)} extracted tickets were completed this week (${fmt(conv,1)}%).`);
+  const openTop=[...cur.open].sort((a,b)=>b[1]-a[1])[0];
+  if(openTop&&openTop[1])risk.push(`Align manpower and team deployment with available ticket volume, particularly in ${esc(openTop[0])} (${fmt(openTop[1])} still open).`);
+  if(conv<70)risk.push('Prioritize conversion of available tickets to completed jobs to maximize productivity and prevent manpower underutilization.');
+  if(!cur.dep.daysRec)risk.push('No daily deployment recorded for this week, so efficiency cannot be computed. Record deployment in PC 1.');
+  // capacity vs output per deployment area
+  const unit=1/(D.per||2);const cap=D.areas.map(a=>{const ttl=a.techs.filter(t=>(t.name||'').trim()).length*unit;const days=cur.dep.daysRec;const ave=days?(cur.dep.by.get(a.name)||0)/days:null;
+    const oa=matchArea(a.name,[...cur.doneInBy.keys(),...cur.doneBy.keys(),...areasAll]);const comp=oa?(cur.doneInBy.get(oa)||0):0;const dd=days||cur.dataDays||null;
+    return {a:a.name,ttl,ave,tgt:ttl*T.eff,aveCt:dd?comp/dd:null,comp}});
+  let capIns='';const below=cap.filter(c=>c.aveCt!=null&&c.tgt&&c.aveCt<c.tgt);
+  if(!cap.length)capIns='Add areas and technicians in PC 1 deployment to compare capacity with output.';
+  else if(!cur.dep.daysRec)capIns='No deployment recorded for this week yet. Record daily deployment in PC 1 to see average teams on duty.';
+  else if(below.length===cap.length)capIns='<b>Key insight:</b> Deployment capacity remains higher than completed output across all areas, indicating an opportunity to improve team utilization and ticket conversion.';
+  else if(below.length)capIns=`<b>Key insight:</b> Completed output is below the capacity target in ${below.map(c=>esc(c.a)).join(', ')}.`;
+  else capIns='<b>Key insight:</b> Completed output meets or exceeds the capacity target in all areas.';
+  // ticket health (current week, by OFSC area)
+  const health=[...cur.ext].sort((a,b)=>b[1]-a[1]).map(([k,n])=>{const c=pct(cur.hDone.get(k)||0,n),ra=pct(cur.tix.get(k)||0,n),u=pct(cur.open.get(k)||0,n);const o=Math.max(0,100-c-ra-u);
+    const status=c>=65?'Performing well':c>=50?'Stable':c>=35?'Needs recovery':'Critical';return {k,n,c,ra,u,o,status}});
+  const sorted=[...health].filter(h=>h.n>=5).sort((a,b)=>a.c-b.c);
+  const focus=sorted.length>=2?`<b>Leadership focus:</b> Prioritize ${esc(sorted[0].k)}${sorted.length>2?' and '+esc(sorted[1].k):''} recovery while protecting ${esc(sorted[sorted.length-1].k)} completion output.`:'';
+  const worst=sorted.slice(0,2).map(h=>h.k);
+  return {T,weeks,wl,W,cur,prev,wn,depSeries,depTot,depGrand,extSeries,extBreak,rem,risk,cap,capIns,health,focus,worst,areasAll,anyDep:W.some(w=>w.dep.daysRec),avg};
+}
+function pmoAreas(p){const base=p.areasAll.length?p.areasAll:getDep().areas.map(a=>a.name);return base}
+function renderPmo(st){
+  const p=st.pmo=pmoCompute(st);const T=p.T;const cur=p.cur,prev=p.prev;
+  $('#tgCt').value=T.ct;$('#tgEff').value=T.eff;
+  $('#pmoWeekPill').textContent=`Week ${p.wn} · ${rangeLabel(cur.ws,addDays(cur.ws,6))}`;
+  const v=wkView();$('#pmoNote').textContent=v._unsaved?'Typed entries below are saved for this week.':'Entries saved for this week.';
+  const dC=prev.n||prev.done?dlt(cur.done,prev.done,'pct',true):null,dE=cur.eff!=null&&prev.eff!=null?dlt(cur.eff,prev.eff,'pct',true):null;
+  const dh=(d)=>d?`<span class="delta ${d.cls}">${d.txt} <small>vs Week ${weekNo(prev.ws)}</small></span>`:'';
+  $('#pmoKpis').innerHTML=[
+    kpiCard('Completed tickets',fmt(cur.done),`of ${fmt(T.ct)} target · ${fp(pct(cur.done,T.ct))}`,dh(dC),cur.done>=T.ct?'good':''),
+    kpiCard('Efficiency',cur.eff==null?'—':fmt(cur.eff,2),cur.eff==null?'record deployment in PC 1':`of ${fmt(T.eff,2)} target · in-house completed (${fmt(cur.doneIn)}) ÷ teams deployed`,dh(dE),cur.eff!=null&&cur.eff>=T.eff?'good':'hero'),
+    kpiCard('Deployed',cur.dep.daysRec?nfmt(cur.dep.total):'—',cur.dep.daysRec?`teams this week · ${cur.dep.daysRec} day${cur.dep.daysRec>1?'s':''} recorded`:'no deployment recorded'),
+    kpiCard('Extracted',fmt(cur.n),'tickets received this week')
+  ].join('');
+  // perf table
+  const effs=p.W.map(w=>w.eff),dones=p.W.map(w=>w.done);
+  $('#perfSub').textContent=`Weekly target: ${fmt(T.ct)} completed · ${fmt(T.eff,2)} efficiency · EFF counts in-house work only`;
+  $('#perfTbl').innerHTML=`<table><thead><tr><th>Week</th><th class="n">Completed</th><th class="n">In-house</th><th class="n">EFF</th><th class="n">Teams deployed</th></tr></thead><tbody>${p.W.map((w,i)=>`<tr><td>${p.wl[i]}</td><td class="n">${fmt(w.done)}</td><td class="n">${rosterKeys().size?fmt(w.doneIn):'—'}</td><td class="n">${w.eff==null?'—':fmt(w.eff,2)}</td><td class="n">${w.dep.daysRec?nfmt(w.dep.total):'—'}</td></tr>`).join('')}<tr class="total"><td>Average</td><td class="n">${fmt(p.avg(dones),0)}</td><td class="n">${rosterKeys().size?fmt(p.avg(p.W.map(w=>w.doneIn)),0):'—'}</td><td class="n">${p.avg(effs)==null?'—':fmt(p.avg(effs),2)}</td><td class="n">${p.avg(p.W.map(w=>w.dep.daysRec?w.dep.total:null))==null?'—':nfmt(p.avg(p.W.map(w=>w.dep.daysRec?w.dep.total:null)))}</td></tr></tbody></table>`;
+  $('#depWTbl').innerHTML=p.anyDep?`<table><thead><tr><th>Area</th><th class="n">Total deployments</th><th class="n">Average / week</th><th class="n">Share</th></tr></thead><tbody>${p.depTot.map(d=>`<tr><td>${esc(d.name)}</td><td class="n">${nfmt(d.total)}</td><td class="n">${d.avg==null?'—':nfmt(d.avg)}</td><td class="n">${fp(pct(d.total,p.depGrand))}</td></tr>`).join('')}<tr class="total"><td>Overall</td><td class="n">${nfmt(p.depGrand)}</td><td class="n">${nfmt(p.depGrand/Math.max(1,p.W.filter(w=>w.dep.daysRec).length))}</td><td class="n">100%</td></tr></tbody></table>`:'<div class="small" style="margin-top:8px">No daily deployment recorded in these weeks. Record it in PC 1 · In-house deployment.</div>';
+  $('#extBrH').textContent=`Area breakdown · Week ${p.wn}`;
+  $('#extTbl').innerHTML=p.extBreak.length?`<table><thead><tr><th>Area</th><th class="n">Extracted</th><th class="n">Share</th></tr></thead><tbody>${p.extBreak.map((x,i)=>`<tr><td><span class="dot" style="display:inline-block;margin-right:8px;background:${i<6?`var(--c${i+1})`:'var(--muted)'}"></span>${esc(x.k)}</td><td class="n">${fmt(x.v)}</td><td class="n">${fmt(x.p,2)}%</td></tr>`).join('')}<tr class="total"><td>Total</td><td class="n">${fmt(cur.n)}</td><td class="n">100%</td></tr></tbody></table>`:'<div class="small">No tickets this week.</div>';
+  $('#pipeRem').innerHTML=p.rem.map(x=>`<li>${x}</li>`).join('');$('#pipeRisk').innerHTML=(p.risk.length?p.risk:['No pipeline risks flagged this week.']).map(x=>`<li>${x}</li>`).join('');
+  $('#capIns').innerHTML=p.capIns;
+  // health
+  $('#healthSub').textContent=`Share of Week ${p.wn} extracted tickets · Performing well 65%+ completed, Stable 50–65%, Needs recovery 35–50%, Critical under 35%`;
+  const sc={'Performing well':'good','Stable':'good','Needs recovery':'warn','Critical':'crit'};
+  $('#healthTbl').innerHTML=p.health.length?`<table><thead><tr><th>Area</th><th class="n">Completed</th><th class="n">RPR / AFD</th><th class="n">Unhandled</th><th class="n">Other</th><th>Status</th></tr></thead><tbody>${p.health.map(h=>`<tr><td>${esc(h.k)}</td><td class="n">${fp(h.c)}</td><td class="n">${fp(h.ra)}</td><td class="n">${fp(h.u)}</td><td class="n">${fp(h.o)}</td><td>${pill(h.status,sc[h.status])}</td></tr>`).join('')}</tbody></table><div class="small" style="margin-top:6px">Unhandled = still open (pending, started, suspended). Other = not done and cancelled.</div>`:'<div class="small">No tickets this week.</div>';
+  $('#healthFocus').innerHTML=p.focus;$('#healthFocus').hidden=!p.focus;
+  $('#monMeasure').innerHTML=`<b>Success measure:</b> ${fmt(T.ct)}+ completed tickets, ${fmt(T.eff,2)}+ efficiency${p.worst.length?`, and a declining backlog in ${p.worst.map(esc).join(' and ')}`:''}.`;
+  renderPmoEditors(p);
+}
+function renderPmoEditors(p){
+  const v=wkView();const areas=pmoAreas(p);
+  ['ceo','focus','qaRec','ppeRem','expected'].forEach(k=>{const el=$('#w_'+k);if(el)el.value=v[k]||''});
+  const qa=v.qa||{};let qs=0,qb=0;areas.forEach(a=>{const q=qa[a]||{};qs+=+q.std||0;qb+=+q.sub||0});const qt=qs+qb;
+  $('#qaIn').innerHTML=`<table class="ed-t"><thead><tr><th>Area</th><th class="n">Standard</th><th class="n">Substandard</th><th class="n">% of total</th></tr></thead><tbody>${areas.map((a,i)=>{const q=qa[a]||{};const n=(+q.std||0)+(+q.sub||0);return `<tr><td>${esc(a)}</td><td><input type="number" min="0" step="1" id="qa_s_${i}" data-wk="qa.${i}.std" value="${q.std??''}" aria-label="${esc(a)} standard"></td><td><input type="number" min="0" step="1" id="qa_b_${i}" data-wk="qa.${i}.sub" value="${q.sub??''}" aria-label="${esc(a)} substandard"></td><td class="n">${qt?fp(pct(n,qt)):'—'}</td></tr>`}).join('')}<tr class="total"><td>Total</td><td class="n">${fmt(qs)}</td><td class="n">${fmt(qb)}</td><td class="n">${qt?'100%':'—'}</td></tr></tbody></table>`;
+  $('#qaTot').innerHTML=`<div><span class="l">Total inspections</span><span class="v">${fmt(qt)}</span></div><div><span class="l">Standard</span><span class="v ev-good">${qt?fp(pct(qs,qt)):'—'}</span></div><div><span class="l">Substandard</span><span class="v ev-bad">${qt?fp(pct(qb,qt)):'—'}</span></div>`;
+  const pp=v.ppe||{};let pc=0,pn=0;areas.forEach(a=>{const q=pp[a]||{};pc+=+q.ok||0;pn+=+q.no||0});
+  $('#ppeIn').innerHTML=`<table class="ed-t"><thead><tr><th>Area</th><th class="n">Compliant</th><th class="n">Non-compliant</th><th class="n">Inspections</th><th class="n">Compliance</th></tr></thead><tbody>${areas.map((a,i)=>{const q=pp[a]||{};const n=(+q.ok||0)+(+q.no||0);return `<tr><td>${esc(a)}</td><td><input type="number" min="0" step="1" id="pp_o_${i}" data-wk="ppe.${i}.ok" value="${q.ok??''}" aria-label="${esc(a)} compliant"></td><td><input type="number" min="0" step="1" id="pp_n_${i}" data-wk="ppe.${i}.no" value="${q.no??''}" aria-label="${esc(a)} non-compliant"></td><td class="n">${fmt(n)}</td><td class="n ${n&&q.no>0?'ev-bad':''}">${n?fp(pct(+q.ok||0,n)):'—'}</td></tr>`}).join('')}<tr class="total"><td>Total</td><td class="n">${fmt(pc)}</td><td class="n">${fmt(pn)}</td><td class="n">${fmt(pc+pn)}</td><td class="n">${pc+pn?fp(pct(pc,pc+pn)):'—'}</td></tr></tbody></table>`;
+  const G=getWk().fuelGroups;const fu=v.fuel||{};
+  $('#fuelIn').innerHTML=`<table class="ed-t"><thead><tr><th>Group</th><th class="n">Target lit / ticket</th><th class="n">Actual this week</th></tr></thead><tbody>${G.map((g,i)=>`<tr><td><input type="text" id="fg_n_${i}" data-fg="${i}.name" value="${esc(g.name)}" aria-label="Fuel group name"></td><td><input type="number" min="0" step="0.01" id="fg_t_${i}" data-fg="${i}.target" value="${g.target}" aria-label="Target"></td><td><input type="number" min="0" step="0.01" id="fu_${i}" data-wk="fuel.${i}" value="${fu[i]??''}" aria-label="Actual for ${esc(g.name)}"></td></tr>`).join('')}</tbody></table>`;
+  $('#fuelCharts').innerHTML=G.map((g,i)=>`<div class="card"><h4 class="h4">Lit/ticket performance (target vs actual) · ${esc(g.name)}</h4><div class="cbox" style="height:240px"><canvas id="chFuel${i}"></canvas></div></div>`).join('');
+  $('#monTbl').innerHTML=`<table class="ed-t"><thead><tr><th>Action</th><th>Expected outcome</th><th>Timing</th><th>Evaluation for Week ${p.wn}</th><th class="setup"></th></tr></thead><tbody>${v.mon.map((m,i)=>`<tr><td><textarea id="mo_a_${i}" data-wk="mon.${i}.action" rows="2" aria-label="Action">${esc(m.action)}</textarea></td><td><textarea id="mo_o_${i}" data-wk="mon.${i}.outcome" rows="2" aria-label="Expected outcome">${esc(m.outcome)}</textarea></td><td><input type="text" id="mo_t_${i}" data-wk="mon.${i}.timing" value="${esc(m.timing)}" aria-label="Timing"></td><td><select id="mo_e_${i}" data-wk="mon.${i}.ev" aria-label="Evaluation" class="${m.ev==='GOOD'?'ev-good':m.ev==='POOR'?'ev-bad':m.ev==='NEEDS IMPROVEMENT'?'ev-mid':''}">${EVALS.map(e=>`<option ${e===m.ev?'selected':''}>${e}</option>`).join('')}</select></td><td class="setup"><button class="x" type="button" data-rowdel="mon.${i}" aria-label="Remove row">✕</button></td></tr>`).join('')}</tbody></table><button class="btn setup" type="button" data-rowadd="mon" style="margin-top:8px">Add action</button>`;
+  $('#priTbl').innerHTML=`<table class="ed-t"><thead><tr><th>Activity</th><th>Impact</th><th>Deadline</th><th class="setup"></th></tr></thead><tbody>${v.pri.map((m,i)=>`<tr><td><textarea id="pr_a_${i}" data-wk="pri.${i}.activity" rows="2" aria-label="Activity">${esc(m.activity)}</textarea></td><td><textarea id="pr_i_${i}" data-wk="pri.${i}.impact" rows="2" aria-label="Impact">${esc(m.impact)}</textarea></td><td><input type="text" id="pr_d_${i}" data-wk="pri.${i}.deadline" value="${esc(m.deadline||'Week '+(p.wn+1))}" aria-label="Deadline"></td><td class="setup"><button class="x" type="button" data-rowdel="pri.${i}" aria-label="Remove row">✕</button></td></tr>`).join('')}</tbody></table><button class="btn setup" type="button" data-rowadd="pri" style="margin-top:8px">Add priority</button>`;
+}
+function fuelSeries(p){const W=getWk();const G=W.fuelGroups;return G.map((g,i)=>({g,vals:p.weeks.map(ws=>{const r=W.weeks[dKey(ws)];const x=r&&r.fuel?r.fuel[i]:null;return x===''||x==null?null:+x})}))}
+function pmoCfgs(p,P,font){
+  const base=baseOpts(P,font);const out={};const avgL=[...p.wl,'Average'];
+  const dones=p.W.map(w=>w.done),effs=p.W.map(w=>w.eff==null?null:+w.eff.toFixed(2));
+  const sc=scales(P,false,false);
+  out.perf={type:'bar',data:{labels:avgL,datasets:[
+    {type:'bar',label:'Completed (SLI PR)',data:[...dones,Math.round(p.avg(dones)||0)],backgroundColor:[...dones.map(()=>P.accent),P.muted],borderRadius:2,maxBarThickness:44,yAxisID:'y',order:2},
+    {type:'line',label:'EFF',data:[...effs,p.avg(effs)==null?null:+p.avg(effs).toFixed(2)],borderColor:P.cat[1],backgroundColor:P.cat[1],pointRadius:4,borderWidth:2,tension:.2,spanGaps:true,yAxisID:'y1',order:1},
+    {type:'line',label:'Target '+fmt(p.T.ct),data:avgL.map(()=>p.T.ct),borderColor:P.crit,borderDash:[5,4],pointRadius:0,borderWidth:1.5,yAxisID:'y',order:0}]},
+    options:{...base,interaction:{mode:'index',intersect:false},scales:{x:sc.x,y:{...sc.y,title:{display:true,text:'Completed',color:P.fg2}},y1:{...sc.y,position:'right',grid:{display:false},title:{display:true,text:'EFF',color:P.fg2},suggestedMax:Math.max(p.T.eff*1.5,...effs.filter(x=>x!=null))}},plugins:{...base.plugins,legend:{position:'bottom',labels:base.plugins.legend.labels}}}};
+  if(p.anyDep)out.depW={type:'line',data:{labels:avgL,datasets:p.depSeries.map((s,i)=>({label:s.name,data:[...s.vals,p.avg(s.vals)],borderColor:P.cat[i%6],backgroundColor:P.cat[i%6],pointRadius:3,borderWidth:2,tension:.2,spanGaps:true}))},
+    options:{...base,interaction:{mode:'index',intersect:false},scales:sc,plugins:{...base.plugins,legend:{position:'bottom',labels:base.plugins.legend.labels}}}};
+  out.ext={type:'bar',data:{labels:avgL,datasets:p.extSeries.map((s,i)=>({label:s.name,data:[...s.vals,+(p.avg(s.vals)||0).toFixed(1)],backgroundColor:s.name==='Other areas'?P.muted:P.cat[i%6],borderRadius:1,maxBarThickness:46}))},
+    options:{...base,scales:scales(P,true,false),plugins:{...base.plugins,legend:{position:'bottom',labels:base.plugins.legend.labels}}}};
+  const capL=p.cap.map(c=>c.a.toUpperCase());
+  out.capT={type:'bar',data:{labels:capL,datasets:[{label:'Total teams',data:p.cap.map(c=>+c.ttl.toFixed(1)),backgroundColor:P.cat[2],borderRadius:2,maxBarThickness:34},{label:'Average teams on duty',data:p.cap.map(c=>c.ave==null?null:+c.ave.toFixed(1)),backgroundColor:P.cat[1],borderRadius:2,maxBarThickness:34}]},options:{...base,scales:sc,plugins:{...base.plugins,legend:{position:'bottom',labels:base.plugins.legend.labels}}}};
+  out.capC={type:'bar',data:{labels:capL,datasets:[{label:'Target completed / day',data:p.cap.map(c=>+c.tgt.toFixed(1)),backgroundColor:P.cat[2],borderRadius:2,maxBarThickness:34},{label:'Average completed / day',data:p.cap.map(c=>c.aveCt==null?null:+c.aveCt.toFixed(1)),backgroundColor:P.cat[1],borderRadius:2,maxBarThickness:34}]},options:{...base,scales:sc,plugins:{...base.plugins,legend:{position:'bottom',labels:base.plugins.legend.labels}}}};
+  const v=wkView();const areas=pmoAreas(p);
+  out.qa={type:'bar',data:{labels:areas,datasets:[{label:'Standard',data:areas.map(a=>+((v.qa||{})[a]||{}).std||0),backgroundColor:P.cat[2],borderRadius:2,maxBarThickness:30},{label:'Substandard',data:areas.map(a=>+((v.qa||{})[a]||{}).sub||0),backgroundColor:P.cat[1],borderRadius:2,maxBarThickness:30}]},options:{...base,scales:sc,plugins:{...base.plugins,legend:{position:'bottom',labels:base.plugins.legend.labels}}}};
+  out.ppe={type:'bar',data:{labels:areas,datasets:[{label:'Compliant',data:areas.map(a=>+((v.ppe||{})[a]||{}).ok||0),backgroundColor:P.good,borderRadius:2,maxBarThickness:30},{label:'Non-compliant',data:areas.map(a=>+((v.ppe||{})[a]||{}).no||0),backgroundColor:P.crit,borderRadius:2,maxBarThickness:30}]},options:{...base,scales:sc,plugins:{...base.plugins,legend:{position:'bottom',labels:base.plugins.legend.labels}}}};
+  out.fuel=fuelSeries(p).map(f=>{const vals=f.vals;const a=p.avg(vals);return {type:'line',data:{labels:avgL,datasets:[{label:'Target lit/ticket',data:avgL.map(()=>+f.g.target),borderColor:P.cat[2],backgroundColor:P.cat[2],pointRadius:3,borderWidth:2},{label:'Actual lit/ticket',data:[...vals,a==null?null:+a.toFixed(2)],borderColor:P.crit,backgroundColor:P.crit,pointRadius:4,borderWidth:2,spanGaps:true}]},options:{...base,interaction:{mode:'index',intersect:false},scales:scales(P,false,false),plugins:{...base.plugins,legend:{position:'bottom',labels:base.plugins.legend.labels}}}}});
+  out.health={type:'bar',data:{labels:p.health.map(h=>h.k),datasets:[{label:'Unhandled %',data:p.health.map(h=>+h.u.toFixed(1)),backgroundColor:p.health.map(h=>h.u>=10?P.crit:P.warn),borderRadius:2,maxBarThickness:40}]},options:{...base,scales:{...sc,y:{...sc.y,ticks:{...sc.y.ticks,callback:v=>v+'%'}}},plugins:{...base.plugins,legend:{display:false}}}};
+  return out;
+}
+function drawPmoCharts(st){const p=st.pmo;if(!p)return;const c=pmoCfgs(p,pal(),{size:12});
+  charts.perf=new Chart($('#chPerf'),c.perf);if(c.depW)charts.depW=new Chart($('#chDepW'),c.depW);charts.ext=new Chart($('#chExt'),c.ext);
+  charts.capT=new Chart($('#chCapTeams'),c.capT);charts.capC=new Chart($('#chCapCt'),c.capC);charts.qa=new Chart($('#chQa'),c.qa);charts.ppe=new Chart($('#chPpe'),c.ppe);
+  c.fuel.forEach((f,i)=>{const el=$('#chFuel'+i);if(el)charts['fuel'+i]=new Chart(el,f)});charts.health=new Chart($('#chHealth'),c.health)}
+function setWkField(path,val){const r=wkRec(true);const parts=path.split('.');const areas=current&&current.pmo?pmoAreas(current.pmo):[];
+  if(parts[0]==='qa'||parts[0]==='ppe'){const a=areas[+parts[1]];if(a==null)return;r[parts[0]]=r[parts[0]]||{};const o=r[parts[0]][a]=r[parts[0]][a]||{};o[parts[2]]=val===''?'':Math.max(0,Math.round(+val))}
+  else if(parts[0]==='fuel'){r.fuel=r.fuel||{};r.fuel[parts[1]]=val===''?'':+val}
+  else if(parts[0]==='mon'||parts[0]==='pri'){const row=r[parts[0]][+parts[1]];if(row)row[parts[2]]=val}
+  else r[parts[0]]=val;
+  saveWk()}
 function renderAll(){
   $('#sampleNote').hidden=!state.sample;
   renderFiles();renderMap();renderVal();renderFilters();renderReport();
@@ -761,15 +1703,17 @@ function afterLoad(tryFormat){
 function sample(){
   let s=20261011;const rnd=()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
   const pick=(arr,w)=>{let x=rnd()*w.reduce((a,b)=>a+b,0);for(let i=0;i<arr.length;i++){x-=w[i];if(x<0)return arr[i]}return arr[arr.length-1]};
-  const areas=[['Batangas','BTG',1.2,.9],['Laguna','LAG',1.4,.93],['MPX Subcon','MPX',.9,.84],['I8 PRWAR Albay','ALB',.7,.88],['I8 PRWAR CamSur','CSR',.8,.8]];
-  const types=['Installation','Repair','Migration','Relocation','Pull-out','Survey'],tw=[38,30,12,9,6,5];
-  const aoa=[['Activity ID','Activity Status','Bucket','Resource','Activity Type','Date','Duration (min)']];
+  const areas=[['Laguna','LAG',.8,.9],['Batangas','BTG',1,.88],['Albay','ALB',1.6,.82],['CamSur','CSR',2.4,.78]];
+  const types=['Installation','Repair','After Sale','Migration','Relocation','Pull-out'],tw=[38,26,8,12,9,6];
+  const RS={'Repair':[['No dial tone',5],['Slow internet',4],['Intermittent connection',3],['Damaged drop wire',2],['Defective modem',1]],'After Sale':[['Loose connector',4],['Low signal after install',3],['Wrong modem setup',2],['Customer not oriented',1]]};
+  const aoa=[['Activity ID','Activity Status','Bucket','Resource','Activity Type','Date','Duration (min)','Reason']];
   let id=4410200;const start=new Date(2026,7,1);
   for(let d=0;d<71;d++){const day=new Date(start);day.setDate(start.getDate()+d);const sun=day.getDay()===0;
     areas.forEach(([a,code,vol,cr])=>{const n=Math.round((sun?3:9)*vol*(0.7+rnd()*0.6));
       for(let i=0;i<n;i++){const r=rnd();const st=r<cr?'completed':r<cr+0.08?'notdone':r<cr+0.12?'cancelled':pick(['pending','started','suspended'],[3,1,1]);
         const ty=pick(types,tw);const dur=Math.round((ty==='Installation'?110:ty==='Repair'?75:60)*(0.6+rnd()*0.9));
-        aoa.push([String(id++),st,a,`${code}-T${String(1+Math.floor(rnd()*6)).padStart(2,'0')}`,ty,day,st==='cancelled'?null:dur])}})}
+        const rsn=RS[ty]?pick(RS[ty].map(x=>x[0]),RS[ty].map(x=>x[1])):null;
+        aoa.push([String(id++),st,a,`${code}-T${String(1+Math.floor(rnd()*6)).padStart(2,'0')}`,ty,day,st==='cancelled'?null:dur,rsn])}})}
   for(let i=0;i<6;i++)aoa.push([...aoa[10+i*37]]);
   aoa[55][1]=null;aoa[120][1]=null;aoa[301][1]=null;aoa[88][5]='TBA';aoa[450][5]='TBA';
   state.files=[{name:'OFSC_Sample.xlsx',size:0,lm:0,sample:true,sheets:[makeSheet('OFSC Aug–Oct',aoa,0)]}];
@@ -801,11 +1745,11 @@ function chartImg(cfg,w,h){
 function rgb(hex){const n=parseInt(hex.slice(1),16);return [n>>16&255,n>>8&255,n&255]}
 async function exportPDF(){
   if(!window.jspdf||!window.Chart){toast('PDF tools did not load. Check your connection and reload.');return}
-  const st=current;if(!st||!st.total){toast('Nothing to export yet.');return}
+  const st=current;if(!st||(!st.total&&!(state.tab==='ops'&&st.ops&&st.ops.backlog.length))){toast('Nothing to export yet.');return}
   const btn=$('#pdfBtn');btn.disabled=true;
   try{
-  const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'pt',format:'a4'});
-  const W=595.28,H=841.89,M=36,CW=W-2*M;const P=LIGHT;
+  const land=state.tab==='pmo';const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'pt',format:'a4',orientation:land?'landscape':'portrait'});
+  const W=land?841.89:595.28,H=land?595.28:841.89,M=36,CW=W-2*M;const P=LIGHT;
   const font={size:9,family:'helvetica'};const c=cfgs(st,P,font);
   const title=($('#rTitle').value.trim()||'Operations Report').replace(/[–—]/g,'-');const by=$('#fBy').value.trim();
   const D=st.deltas||{},pi=st.pi;
@@ -818,34 +1762,150 @@ async function exportPDF(){
   header();
   doc.setTextColor(...rgb(P.fg));doc.setFont('helvetica','bold');doc.setFontSize(19);doc.text(title,M,86);
   doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...rgb(P.fg2));doc.text($('#rMeta').textContent.replace(/[–—]/g,'-'),M,101);
+  const plain=s=>String(s).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/[–—]/g,'-').replace(/→/g,'->').replace(/÷/g,'/').replace(/₱/g,'PHP ');
+  const list=(items,yy,col)=>{doc.setFont('helvetica','normal');doc.setFontSize(9.5);
+    items.forEach(t=>{const lines=doc.splitTextToSize(plain(t),CW-14);if(yy+lines.length*12>H-50){doc.addPage();header();yy=80}
+      doc.setFillColor(...rgb(col));doc.circle(M+3,yy-3,1.8,'F');doc.setTextColor(...rgb(P.fg));doc.text(lines,M+12,yy);yy+=lines.length*12+4});return yy};
+  const ensure=(yy,need)=>{if(yy+need>H-50){doc.addPage();header();return 82}return yy};
+  const kpiBox=(ks,hero)=>{const kw=CW/ks.length;const y0=114;const showD=pi&&ks.some(k=>k[2]!==undefined);const kh=showD?66:52;
+    doc.setDrawColor(...rgb(P.grid));doc.setLineWidth(.7);doc.roundedRect(M,y0,CW,kh,4,4,'S');
+    ks.forEach(([l,v,d],i)=>{const x=M+i*kw;if(i)doc.line(x,y0,x,y0+kh);
+      doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor(...rgb(P.fg2));doc.text(plain(l).toUpperCase(),x+8,y0+16);
+      doc.setFont('helvetica','bold');let fs=ks.length>5?14:17;doc.setFontSize(fs);while(doc.getTextWidth(plain(v))>kw-14&&fs>8){fs-=.5;doc.setFontSize(fs)}
+      doc.setTextColor(...rgb(i===hero?P.accent:P.fg));doc.text(plain(v),x+8,y0+38);
+      if(showD&&d!==undefined){doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...rgb(d?(d.cls==='good'?P.good:d.cls==='bad'?P.crit:P.fg2):P.fg2));doc.text(d?`${d.plain} vs ${pi.pname}${st.cov&&st.cov.prev?'*':''}`:`no data for ${pi.pname}`,x+8,y0+54)}
+      doc.setFont('helvetica','normal')});
+    return y0+kh+24};
+  const tStyle={theme:'plain',styles:{font:'helvetica',fontSize:8.5,cellPadding:4,textColor:rgb(P.fg),lineColor:rgb(P.grid),lineWidth:{bottom:.5}},headStyles:{fontStyle:'bold',textColor:rgb(P.fg2),fontSize:7.5},margin:{left:M,right:M,top:70},
+    didDrawPage:()=>{header()}};
+  const right=idx=>Object.fromEntries(idx.map(i=>[i,{halign:'right'}]));
+  const table=(yy,title,head,body,ri,extra={})=>{yy=ensure(yy,90);h2(title,yy);const xp=extra.didParseCell;
+    doc.autoTable({...tStyle,startY:yy+8,head:[head.map(plain)],body:body.map(r=>r.map(plain)),columnStyles:right(ri),...extra,
+      didParseCell:h=>{if(h.section==='head'&&ri.includes(h.column.index))h.cell.styles.halign='right';if(xp)xp(h)}});return doc.lastAutoTable.finalY+26};
+  let y;
+  if(state.tab==='ops'){
+    const o=st.ops,oc=opsCfgs(o,P,font);
+    y=kpiBox([['Activities',fmt(st.total),D.total??(pi?null:undefined)],['Completed',fmt(st.groups.Completed),D.done??(pi?null:undefined)],['Open backlog',fmt(o.backlog.length)],['Overdue (>'+o.thr+'d)',fmt(o.overdue.length)],['Unassigned',fmt(o.unassigned.length)],['Active techs',fmt(o.active)]],1);
+    const t=st.tix,dp=st.dep;
+    y=table(y,'Ticket status',['Extracted','Completed','RPR','AFD (after sale)'],[[fmt(t.ext),fmt(t.done)+` (${fp(pct(t.done,t.ext))})`,fmt(t.rpr),fmt(t.afd)]],[],{styles:{...tStyle.styles,fontSize:13,fontStyle:'bold',cellPadding:6}});
+    if(state.map.reason&&(t.rpr||t.afd)){const rows=[0,1,2].map(i=>{const a=t.rprR.top[i],b=t.afdR.top[i];return [String(i+1),a?a.k:'-',a?`${fmt(a.n)} (${fmt(a.p,0)}%)`:'',b?b.k:'-',b?`${fmt(b.n)} (${fmt(b.p,0)}%)`:'']});
+      y=table(y-14,'Top 3 reasons',['#','RPR reason','Count','AFD reason','Count'],rows,[2,4],{styles:{...tStyle.styles,fontSize:8}})}
+    if(dp&&dp.rows.length){
+      y=table(y,`In-house deployment · ${dayName(dp.date)}${dp.saved?'':' (not saved)'} · 1 tech = ${fmt(dp.unit,2)} team`,['Status',...dp.rows.map(r=>r.a),'Total','Teams'],[...DST.map(([k,l])=>[l,...dp.rows.map(r=>fmt(r.c[k])),fmt(dp.all[k]),nfmt(dp.all[k]*dp.unit)]),['Total',...dp.rows.map(r=>fmt(r.total)),fmt(dp.allTotal),nfmt(dp.allTotal*dp.unit)],['TL',...dp.rows.map(r=>r.tl||'-'),'',''],['Top technician',...dp.rows.map(r=>r.top?`${r.top.k} - ${fmt(r.top.rate,0)}%`:'-'),'','']],dp.rows.map((_,i)=>i+1).concat([dp.rows.length+1,dp.rows.length+2]),
+        {didParseCell:h=>{if(h.section==='body'&&h.row.index===DST.length)h.cell.styles.fontStyle='bold';if(h.section==='body'&&h.row.index>DST.length){h.cell.styles.fontSize=7.5;h.cell.styles.halign='left'}}});
+      const roster=dp.rows.flatMap(r=>r.techs.map(x=>[r.a,x.name,x.st,x.partner]));
+      if(roster.length)y=table(y,'In-house deployment · technicians',['Area','Technician','Status','Partner / remarks'],roster,[],{styles:{...tStyle.styles,fontSize:7.5},
+        didParseCell:h=>{if(h.section==='body'&&h.column.index===2){const t=h.cell.raw;h.cell.styles.fontStyle='bold';h.cell.styles.textColor=rgb(t==='DTY'?P.good:t==='ABSENT'?P.crit:t==='STDBY'?P.c3:P.fg2)}}})
+    if(dp&&dp.att.rows.length)y=table(y,`Attendance · ${dp.att.label} · ${dp.att.recDays} of ${dp.att.days.length} days recorded`,['Technician','Area',...DST.map(([k])=>DCODE[k]),'Days'],dp.att.rows.map(r=>[r.name,r.area,...DSTK.map(k=>String(r.c[k]||0)),String(r.rec)]),[2,3,4,5,6,7,8],{styles:{...tStyle.styles,fontSize:7.5},
+      didParseCell:h=>{if(h.section==='body'&&h.column.index===6&&h.cell.raw!=='0'){h.cell.styles.textColor=rgb(P.crit);h.cell.styles.fontStyle='bold'}}});
+}
+    if(dp&&dp.top5.length)y=table(y,'Top technicians',['#','Technician','Area','Completed','Closed','Rate'],dp.top5.map((r,i)=>[String(i+1),r.k,r.area,fmt(r.o.Completed),fmt(rateBase(r.o)),fp(r.rate)]),[3,4,5]);
+    y=ensure(y,230);
+    if(oc.daily){h2(`Daily accomplishment · per ${o.daily.gran}`,y);doc.addImage(chartImg(oc.daily,CW,190),'PNG',M,y+8,CW,190);y+=226}
+    y=ensure(y,190);h2(`Open backlog by age · as of ${dLabel(o.asOf)}`,y);doc.addImage(chartImg(oc.aging,CW,150),'PNG',M,y+8,CW,150);y+=186;
+    y=table(y,'Project status by area',['Area','Activities','Done','Rate','Backlog','Overdue','Techs','Status'],o.areas.map(a=>[a.k,fmt(a.o.total),fmt(a.o.Completed),a.rate==null?'-':fp(a.rate),fmt(a.backlog),fmt(a.overdue),fmt(a.techs),a.status||'-']),[1,2,3,4,5,6],
+      {didParseCell:h=>{if(h.section==='body'&&h.column.index===7){const t=h.cell.raw;h.cell.styles.textColor=rgb(t==='Delayed'?P.crit:t==='At risk'?P.warn:t==='On track'?P.good:P.fg2);h.cell.styles.fontStyle='bold'}}});
+    y=ensure(y,120);h2('Operations summary',y);y=list(o.ins.F,y+18,P.accent)+8;
+    y=ensure(y,80);h2('Escalate / follow up',y);y=list(o.ins.A,y+18,P.crit)+8;
+    y=table(y,`Pending issues list · oldest ${Math.min(20,o.backlog.length)} of ${fmt(o.backlog.length)} · full list in the Excel export`,['Activity ID','Area','Technician / bucket','Activity type','Status','Date','Age'],o.backlog.slice(0,20).map(x=>[x.r.id||'-',x.r.area,x.r.resource,x.r.type,x.r.status,dLabel(x.r.date),fmt(x.age)]),[6],
+      {styles:{...tStyle.styles,fontSize:7.5},didParseCell:h=>{if(h.section==='body'&&h.column.index===6&&+String(h.cell.raw).replace(/,/g,'')>o.thr){h.cell.styles.textColor=rgb(P.crit);h.cell.styles.fontStyle='bold'}}});
+    if(o.res.length)y=table(y,'Manpower and workload (top 20)',['Technician','Main area','Activities','Done','Not done','Open','Days','Per day','Rate'],o.res.slice(0,20).map(r=>[r.k,r.area,fmt(r.o.total),fmt(r.o.Completed),fmt(r.o['Not completed']),fmt(r.o.Open),fmt(r.days),r.perDay==null?'-':fmt(r.perDay,1),r.rate==null?'-':fp(r.rate)]),[2,3,4,5,6,7,8],{styles:{...tStyle.styles,fontSize:7.5}});
+  }else if(state.tab==='bill'){
+    const b=st.bill,bc=billCfgs(b,P,font);const n=b.done.length;
+    const dAmt=pi&&b.hasRates?(b.prev?dlt(b.amount,b.prev.amount,'pct',true):null):undefined;
+    y=kpiBox([['Completed tickets',fmt(n),D.done??(pi?null:undefined)],['Ready for billing',`${fmt(b.ready)} (${fp(pct(b.ready,n))})`],['Billable amount',b.hasRates?pesoPlain(b.amount):'-',dAmt],['Not done / rejected',fmt(b.nd.length),pi?dlt(b.nd.length,b.prevNd,'pct',false):undefined],['Cancelled',fmt(b.cx),D.cx??(pi?null:undefined)]],2);
+    if(bc.week){h2('Completed tickets per week',y);doc.addImage(chartImg(bc.week,CW,190),'PNG',M,y+8,CW,190);y+=226}
+    const types=[...b.byType].sort((x,z)=>z[1].n-x[1].n);
+    y=table(y,'Billing summary by activity type',['Activity type','Completed','Share','Rate','Amount'],[...types.map(([k,t])=>[k,fmt(t.n),fp(pct(t.n,n)),t.rate==null?'-':pesoPlain(t.rate),t.rate==null?'-':pesoPlain(t.amt)]),['Total',fmt(n),'100%','',b.hasRates?pesoPlain(b.amount):'-']],[1,2,3,4],
+      {didParseCell:h=>{if(h.section==='body'&&h.row.index===types.length)h.cell.styles.fontStyle='bold'}});
+    const areas=[...b.byArea].sort((x,z)=>z[1].n-x[1].n);
+    y=table(y,'Billing summary by area',['Area','Completed','Not done','Cancelled','Amount'],areas.map(([k,a])=>[k,fmt(a.n),fmt(a.nd),fmt(a.cx),b.hasRates?pesoPlain(a.amt):'-']),[1,2,3,4]);
+    y=table(y,'Validation and compliance check',['Check','Tickets','Result'],b.comp.map(c=>[c.k,c.n==null?'-':fmt(c.n),c.n==null?'Not checked':c.n?'Fix':'OK']),[1],
+      {didParseCell:h=>{if(h.section==='body'&&h.column.index===2){const t=h.cell.raw;h.cell.styles.textColor=rgb(t==='Fix'?P.crit:t==='OK'?P.good:P.fg2);h.cell.styles.fontStyle='bold'}}});
+    const u=st.unpaid;if(u){y=table(y,`Unpaid tickets · ${fmt(u.unpaid.length)} of ${fmt(u.done)} completed${u.unpaidAmt?' · '+pesoPlain(u.unpaidAmt):''} · find the problem, get the solution`,['Problem','Tickets','Amount','Solution'],u.probs.map(p=>[p.k,fmt(p.n),p.priced?pesoPlain(p.amt):'-',p.solution]),[1,2],{columnStyles:{0:{cellWidth:150,fontStyle:'bold'},1:{halign:'right',cellWidth:45},2:{halign:'right',cellWidth:70}}});
+      if(u.items.length)y=table(y,`Unpaid tickets · first ${Math.min(15,u.items.length)} of ${fmt(u.items.length)} · full list in the Excel export`,['Activity ID','Area','Type','Billing status','Problem'],u.items.slice(0,15).map(x=>[x.r.id||'-',x.r.area,x.r.type,x.b?x.b.st||'(blank)':'Not in tracker',x.problem]),[],{styles:{...tStyle.styles,fontSize:7.5}})}
+    y=ensure(y,120);h2('Billing summary',y);y=list(b.ins.F,y+18,P.accent)+8;
+    y=ensure(y,80);h2('For validation / dispute',y);y=list(b.ins.A,y+18,P.crit)+8;
+    if(b.nd.length){const cA=new Map(),cT=new Map();b.nd.forEach(r=>{cA.set(r.area,(cA.get(r.area)||0)+1);cT.set(r.type,(cT.get(r.type)||0)+1)});
+      y=table(y,`Rejected and not done tickets · ${fmt(b.nd.length)} in total`,['Area','Tickets','Share'],[...cA].sort((a,c)=>c[1]-a[1]).map(([k,n])=>[k,fmt(n),fp(pct(n,b.nd.length))]),[1,2]);
+      y=table(y-14,'By activity type',['Activity type','Tickets','Share'],[...cT].sort((a,c)=>c[1]-a[1]).slice(0,8).map(([k,n])=>[k,fmt(n),fp(pct(n,b.nd.length))]),[1,2]);
+      y=table(y,`Newest ${Math.min(15,b.nd.length)} tickets · full list in the Excel export`,['Activity ID','Area','Technician / bucket','Activity type','Status','Date'],b.nd.slice(0,15).map(r=>[r.id||'-',r.area,r.resource,r.type,r.status,r.date?dLabel(r.date):'-']),[],{styles:{...tStyle.styles,fontSize:7.5}})}
+  }else if(state.tab==='pmo'){
+    const p=st.pmo,pc=pmoCfgs(p,P,font),v=wkView(),T=p.T,cur=p.cur;const half=(CW-24)/2,xR=M+half+24;
+    const sec=(eb,t)=>{doc.addPage();header();doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...rgb(P.accent));doc.text(eb.toUpperCase(),M,78);doc.setFontSize(17);doc.setTextColor(...rgb(P.fg));doc.text(t,M,98);return 120};
+    const sub=(t,x,yy)=>{doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...rgb(P.fg));doc.text(t,x,yy)};
+    const note=(label,text,yy)=>{if(!text)return yy;text=String(text).replace(/^<b>[^<]*:<\/b>\s*/,'');const lines=doc.splitTextToSize(plain(text),CW-24);const h=lines.length*12+26;doc.setFillColor(...rgb('#EEF6F7'));doc.roundedRect(M,yy,CW,h,4,4,'F');doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...rgb(P.accent));doc.text(label.toUpperCase(),M+12,yy+15);doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(...rgb(P.fg));doc.text(lines,M+12,yy+29);return yy+h+14};
+    const tblAt=(yy,x,w,head,body,ri,extra={})=>{const xp=extra.didParseCell;doc.autoTable({...tStyle,startY:yy,margin:{left:x,right:W-x-w,top:70},tableWidth:w,head:[head.map(plain)],body:body.map(r=>r.map(plain)),columnStyles:right(ri),...extra,didParseCell:h=>{if(h.section==='head'&&ri.includes(h.column.index))h.cell.styles.halign='right';if(xp)xp(h)}});return doc.lastAutoTable.finalY};
+    // 1 executive summary (first page)
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...rgb(P.accent));
+    y=kpiBox([['Completed tickets',`${fmt(cur.done)} / ${fmt(T.ct)}`],['Efficiency',cur.eff==null?'-':`${fmt(cur.eff,2)} / ${fmt(T.eff,2)}`],['Deployed (teams)',cur.dep.daysRec?nfmt(cur.dep.total):'-'],['Extracted',fmt(cur.n)]],1);
+    y=note(`CEO focus for Week ${p.wn}`,v.ceo,y);
+    // 2 weekly performance
+    y=sec('Performance','Weekly Performance');
+    sub('Completed tickets and efficiency',M,y);doc.addImage(chartImg(pc.perf,half,220),'PNG',M,y+8,half,220);
+    sub('Weekly deployment by area',xR,y);if(pc.depW)doc.addImage(chartImg(pc.depW,half,220),'PNG',xR,y+8,half,220);else{doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...rgb(P.fg2));doc.text('No daily deployment recorded.',xR,y+30)}
+    const effs=p.W.map(w=>w.eff),dones=p.W.map(w=>w.done);
+    const y1=tblAt(y+238,M,half,['Week','Completed','EFF'],[...p.W.map((w,i)=>[p.wl[i],fmt(w.done),w.eff==null?'-':fmt(w.eff,2)]),['Average',fmt(p.avg(dones),0),p.avg(effs)==null?'-':fmt(p.avg(effs),2)]],[1,2],{styles:{...tStyle.styles,fontSize:7.5,cellPadding:2.5}});
+    if(p.anyDep)tblAt(y+238,xR,half,['Area','Total deployments','Average / week','Share'],[...p.depTot.map(d=>[d.name,nfmt(d.total),d.avg==null?'-':nfmt(d.avg),fp(pct(d.total,p.depGrand))]),['Overall',nfmt(p.depGrand),'',  '100%']],[1,2,3],{styles:{...tStyle.styles,fontSize:7.5,cellPadding:2.5}});
+    // 3 pipeline
+    y=sec('Pipeline','Extracted Tickets');
+    sub('Extracted tickets per week',M,y);doc.addImage(chartImg(pc.ext,half,230),'PNG',M,y+8,half,230);
+    sub(`Area breakdown · Week ${p.wn}`,xR,y);let yb=tblAt(y+10,xR,half,['Area','Extracted','Share'],[...p.extBreak.map(x=>[x.k,fmt(x.v),fmt(x.p,2)+'%']),['Total',fmt(cur.n),'100%']],[1,2]);
+    let yl=Math.max(y+250,yb+18);sub('Remarks',M,yl);let yr=list(p.rem,yl+16,P.accent);
+    yr=ensure(yr+4,60);sub('Risks / points to watch',M,yr);yr=list(p.risk.length?p.risk:['No pipeline risks flagged this week.'],yr+16,P.crit);
+    note('Management focus',v.focus,ensure(yr+4,50));
+    // 4 capacity
+    y=sec('Operations','Deployment Capacity vs. Completed Output');
+    sub('Average deployment',M,y);doc.addImage(chartImg(pc.capT,half,230),'PNG',M,y+8,half,230);
+    sub('Average completed tickets',xR,y);doc.addImage(chartImg(pc.capC,half,230),'PNG',xR,y+8,half,230);
+    note('Key insight',p.capIns,y+256);
+    // 5 QA
+    const areas=pmoAreas(p);
+    y=sec('Quality and safety','Quality Assurance Inspection');
+    let qs=0,qb=0;const qrows=areas.map(a=>{const q=(v.qa||{})[a]||{};qs+=+q.std||0;qb+=+q.sub||0;return [a,fmt(+q.std||0),fmt(+q.sub||0)]});
+    sub(`Inspections · Week ${p.wn}`,M,y);let yq=tblAt(y+10,M,half,['Area','Standard','Substandard','% of total'],[...qrows.map(r=>[...r,qs+qb?fp(pct(+r[1].replace(/,/g,'')+ +r[2].replace(/,/g,''),qs+qb)):'-']),['Total',fmt(qs),fmt(qb),qs+qb?'100%':'-']],[1,2,3]);
+    doc.addImage(chartImg(pc.qa,half,220),'PNG',xR,y,half,220);
+    note('Operation recommendation',v.qaRec,Math.max(yq,y+230)+16);
+    // 6 PPE
+    y=sec('Quality and safety','PPE Compliance Summary');
+    let pc1=0,pn=0;const prow=areas.map(a=>{const q=(v.ppe||{})[a]||{};const o=+q.ok||0,n=+q.no||0;pc1+=o;pn+=n;return [a,fmt(o),fmt(n),fmt(o+n),o+n?fp(pct(o,o+n)):'-']});
+    sub(`PPE compliance · Week ${p.wn}`,M,y);let yp=tblAt(y+10,M,half,['Area','Compliant','Non-compliant','Inspections','Compliance'],[...prow,['Total',fmt(pc1),fmt(pn),fmt(pc1+pn),pc1+pn?fp(pct(pc1,pc1+pn)):'-']],[1,2,3,4]);
+    sub('PPE inspection results',xR,y);doc.addImage(chartImg(pc.ppe,half,220),'PNG',xR,y+8,half,220);
+    note('Remarks',v.ppeRem,Math.max(yp,y+238)+16);
+    // 7 fuel
+    y=sec('Fuel','Fuel Consumption Report');
+    getWk().fuelGroups.forEach((g,i)=>{const x=i%2?xR:M;const yy=y+Math.floor(i/2)*260;sub(`Lit/ticket performance (target vs actual) · ${g.name}`,x,yy);doc.addImage(chartImg(pc.fuel[i],half,230),'PNG',x,yy+8,half,230)});
+    // 8 monitoring
+    y=sec('Monitoring','Monitoring and Performance Evaluation');
+    y=tblAt(y,M,CW,['Action','Expected outcome','Timing',`Evaluation for Week ${p.wn}`],v.mon.map(m=>[m.action,m.outcome,m.timing,m.ev]),[],{headStyles:{...tStyle.headStyles,fillColor:rgb(P.accent),textColor:[255,255,255]},didParseCell:h=>{if(h.section==='body'&&h.column.index===3){const t=h.cell.raw;h.cell.styles.fontStyle='bold';h.cell.styles.textColor=rgb(t==='GOOD'?P.good:t==='POOR'?P.crit:t==='NEEDS IMPROVEMENT'?P.warn:P.fg2)}}});
+    note('Success measure',`${fmt(T.ct)}+ completed tickets, ${fmt(T.eff,2)}+ efficiency${p.worst.length?', and a declining backlog in '+p.worst.join(' and '):''}.`,y+16);
+    // 9 priorities
+    y=sec('Action plan','Strategic Priorities');
+    y=tblAt(y,M,CW,['Activity','Impact','Deadline'],v.pri.map(m=>[m.activity,m.impact,m.deadline||'Week '+(p.wn+1)]),[],{headStyles:{...tStyle.headStyles,fillColor:rgb(P.accent),textColor:[255,255,255]}});
+    note('Expected result',v.expected,y+16);
+    // 10 ticket health
+    y=sec('Operations','Ticket Health by Area');
+    let yh=tblAt(y,M,half+40,['Area','Completed','RPR / AFD','Unhandled','Other','Status'],p.health.map(h=>[h.k,fp(h.c),fp(h.ra),fp(h.u),fp(h.o),h.status]),[1,2,3,4],
+      {didParseCell:h=>{if(h.section==='body'&&h.column.index===5){const t=h.cell.raw;h.cell.styles.fontStyle='bold';h.cell.styles.textColor=rgb(t==='Critical'?P.crit:t==='Needs recovery'?P.warn:P.good)}}});
+    sub('Unhandled-ticket share',xR+40,y);doc.addImage(chartImg(pc.health,half-40,200),'PNG',xR+40,y+8,half-40,200);
+    if(p.focus)note('Leadership focus',p.focus,Math.max(yh,y+214)+16);
+  }else{
   // KPIs
-  const ks=[['Total activities',fmt(st.total),D.total],['Completion rate',fp(st.rate),D.rate],['Completed',fmt(st.groups.Completed),D.done],['Not completed',fmt(st.groups['Not completed']),D.nd],['Open',fmt(st.groups.Open),D.op],['Cancelled',fmt(st.groups.Cancelled),D.cx]];
-  const kw=CW/ks.length;let y=114;const kh=pi?66:52;
-  doc.setDrawColor(...rgb(P.grid));doc.setLineWidth(.7);doc.roundedRect(M,y,CW,kh,4,4,'S');
-  ks.forEach(([l,v,d],i)=>{const x=M+i*kw;if(i)doc.line(x,y,x,y+kh);
-    doc.setFontSize(7);doc.setTextColor(...rgb(P.fg2));doc.text(l.toUpperCase(),x+10,y+16);
-    doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(...rgb(i===1?P.accent:P.fg));doc.text(v,x+10,y+38);
-    if(pi){doc.setFontSize(7.5);doc.setTextColor(...rgb(d?(d.cls==='good'?P.good:d.cls==='bad'?P.crit:P.fg2):P.fg2));doc.text(d?`${d.plain} vs ${pi.pname}${st.cov&&st.cov.prev?'*':''}`:`no data for ${pi.pname}`,x+10,y+54)}
-    doc.setFont('helvetica','normal')});
+  y=kpiBox([['Total activities',fmt(st.total),D.total??(pi?null:undefined)],['Completion rate',fp(st.rate),D.rate??(pi?null:undefined)],['Completed',fmt(st.groups.Completed),D.done??(pi?null:undefined)],['Not completed',fmt(st.groups['Not completed']),D.nd??(pi?null:undefined)],['Open',fmt(st.groups.Open),D.op??(pi?null:undefined)],['Cancelled',fmt(st.groups.Cancelled),D.cx??(pi?null:undefined)]],1)-24;
   // charts row
-  y=pi?202:188;h2('Status distribution',y);doc.text('Activities by area',M+232,y);
+  y+=22;h2('Status distribution',y);doc.text('Activities by area',M+232,y);
   c.status.options.plugins.legend.position='bottom';
   doc.addImage(chartImg(c.status,220,190),'PNG',M,y+8,220,190);
   const aH=Math.min(250,Math.max(190,c.areaH*.75));doc.addImage(chartImg(c.area,CW-232,aH),'PNG',M+232,y+8,CW-232,aH);
   y=y+18+Math.max(190,aH);
   if(c.trend){h2(`Trend · activities per ${st.trend.gran}`,y+14);doc.addImage(chartImg(c.trend,CW,170),'PNG',M,y+22,CW,170);y+=200}
   // findings
-  const plain=s=>s.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/[–—]/g,'-').replace(/→/g,'->').replace(/÷/g,'/');
-  const list=(items,yy,col)=>{doc.setFont('helvetica','normal');doc.setFontSize(9.5);
-    items.forEach(t=>{const lines=doc.splitTextToSize(plain(t),CW-14);if(yy+lines.length*12>H-50){doc.addPage();header();yy=80}
-      doc.setFillColor(...rgb(col));doc.circle(M+3,yy-3,1.8,'F');doc.setTextColor(...rgb(P.fg));doc.text(lines,M+12,yy);yy+=lines.length*12+4});return yy};
   doc.addPage();header();y=82;
   if(c.weekly){h2('Completion rate by area, week by week',y);doc.addImage(chartImg(c.weekly,CW,190),'PNG',M,y+8,CW,190);y+=226}
   h2('Key findings',y);y=list(st.ins.F,y+18,P.accent)+8;
   h2('Needs attention',y);y=list(st.ins.A,y+18,P.crit)+8;
   // area table
-  const tStyle={theme:'plain',styles:{font:'helvetica',fontSize:8.5,cellPadding:4,textColor:rgb(P.fg),lineColor:rgb(P.grid),lineWidth:{bottom:.5}},headStyles:{fontStyle:'bold',textColor:rgb(P.fg2),fontSize:7.5},margin:{left:M,right:M,top:70},
-    didDrawPage:()=>{header()},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'},5:{halign:'right'},6:{halign:'right'},7:{halign:'right'}}};
+  tStyle.columnStyles=right([1,2,3,4,5,6,7]);
   if(y>H-120){doc.addPage();header();y=82}
   h2('Area summary',y);
   const row=([k,o])=>[k,fmt(o.total),fmt(o.Completed),fmt(o['Not completed']),fmt(o.Open),fmt(o.Cancelled),fp(st.rateOf(o))];
@@ -865,6 +1925,7 @@ async function exportPDF(){
   h2('Data check',y);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...rgb(P.fg2));
   const dq=`Rows read: ${fmt(v.read)} · Older copies of duplicate IDs: ${fmt(v.dup)}${state.rules.dup?' (latest copy kept)':''} · Missing status: ${fmt(v.noStatus)} · Missing/invalid date: ${fmt(v.noDate+v.badDate)} · Future dates: ${fmt(v.future)} · Missing area: ${fmt(v.noArea)}. Completion rate = ${rateDesc().replace('÷','/')}. Sources: ${state.files.map(f=>f.name).join(', ')}.`;
   doc.text(doc.splitTextToSize(dq,CW),M,y+16);
+  }
   const pages=doc.getNumberOfPages();
   for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(7.5);doc.setTextColor(...rgb(P.fg2));doc.text(`INFIUS8 Auto Report · ${title}`,M,H-22);doc.text(`Page ${i} of ${pages}`,W-M,H-22,{align:'right'})}
   await save(fileStem()+'.pdf',new Uint8Array(doc.output('arraybuffer')));
@@ -874,6 +1935,48 @@ async function exportXLSX(){
   if(!window.XLSX){toast('Excel tools did not load.');return}
   const st=current;if(!st){return}
   const pi=st.pi,pv=st.prev;
+  const head=[['INFIUS8 Auto Report',$('#rTitle').value],['Scope',$('#rMeta').textContent],['Prepared by',$('#fBy').value||''],[]];
+  const put=(wb,name,data,aoa)=>XLSX.utils.book_append_sheet(wb,aoa?XLSX.utils.aoa_to_sheet(data):XLSX.utils.json_to_sheet(data.length?data:[{Note:'Nothing to list'}],{cellDates:true}),name);
+  if(state.tab==='ops'){const o=st.ops,wb=XLSX.utils.book_new();
+    put(wb,'Summary',[...head,['Metric','Value'],['Activities in period',st.total],['Completed',st.groups.Completed],['Not done',st.groups['Not completed']],['Open backlog (as of '+dLabel(o.asOf)+')',o.backlog.length],['Overdue (open over '+o.thr+' days)',o.overdue.length],['Unassigned (in bucket)',o.unassigned.length],['Active technicians',o.active],[],
+      ['Area','Activities','Done','Rate (%)','Backlog','Overdue','Technicians','Status'],...o.areas.map(a=>[a.k,a.o.total,a.o.Completed,a.rate==null?null:+a.rate.toFixed(1),a.backlog,a.overdue,a.techs,a.status||'']),[],
+      ['Backlog age','Open activities'],...o.aging.map(a=>[a.l,a.n]),[],['Operations summary'],...o.ins.F.map(t=>[t.replace(/<[^>]+>/g,'')]),[],['Escalate / follow up'],...o.ins.A.map(t=>[t.replace(/<[^>]+>/g,'')])],true);
+    const t=st.tix,dp=st.dep;
+    put(wb,'Ticket status',[...head,['Extracted','Completed','RPR','AFD (after sale)'],[t.ext,t.done,t.rpr,t.afd],[],
+      ['Top RPR reasons','Count','% of RPR'],...t.rprR.top.map(x=>[x.k,x.n,+x.p.toFixed(1)]),[],['Top AFD reasons','Count','% of AFD'],...t.afdR.top.map(x=>[x.k,x.n,+x.p.toFixed(1)]),[],
+      ['Area','Extracted','Completed','RPR','AFD'],...t.byArea.map(([k,a])=>[k,a.ext,a.done,a.rpr,a.afd])],true);
+    put(wb,'Deployment',[...head,['Date',dayName(dp.date)+(dp.saved?'':' (not saved)')],['1 technician = '+fmt(dp.unit,2)+' team'],[],['Status',...dp.rows.map(r=>r.a),'Total','Teams'],
+      ...DST.map(([k,l])=>[l,...dp.rows.map(r=>r.c[k]),dp.all[k],dp.all[k]*dp.unit]),['Total',...dp.rows.map(r=>r.total),dp.allTotal,dp.allTotal*dp.unit],['TL',...dp.rows.map(r=>r.tl||'')],['Top technician',...dp.rows.map(r=>r.top?`${r.top.k} (${fmt(r.top.rate,0)}%)`:'')],[],
+      ['Top technicians','Area','Completed','Closed','Rate (%)'],...dp.top5.map(r=>[r.k,r.area,r.o.Completed,rateBase(r.o),+r.rate.toFixed(1)]),[],
+      ['Technicians on '+dayName(dp.date)+(dp.saved?'':' (not saved)')],['Area','TL','Technician','Status','Partner / remarks'],...dp.rows.flatMap(r=>r.techs.map(x=>[r.a,r.tl||'',x.name,x.st,x.partner]))],true);
+    put(wb,'Attendance',[...head,['Attendance · '+dp.att.label],['Technician','Area',...dp.att.days,...DST.map(([k,l])=>l),'Days recorded'],...dp.att.rows.map(r=>[r.name,r.area,...r.cells.map(x=>x||''),...DSTK.map(k=>r.c[k]),r.rec])],true);
+    put(wb,'Pending issues list',o.backlog.map(x=>({'Activity ID':x.r.id,Area:x.r.area,'Technician / bucket':x.r.resource,'Activity type':x.r.type,Status:x.r.status,Date:x.r.date,'Age (days)':x.age,Overdue:x.age>o.thr?'YES':'',Unassigned:isBucket(x.r.resource)?'YES':'',Source:x.r.src})));
+    put(wb,'Daily accomplishment',o.daily?o.daily.labels.map((l,i)=>{const r=o.daily.rows[i];const x={[o.daily.gran==='day'?'Day':'Week']:l,Total:r?r.total:0};GROUPS.forEach(g=>x[g]=r?r[g]:0);return x}):[]);
+    put(wb,'Workload',o.res.map(r=>({Technician:r.k,'Main area':r.area,Activities:r.o.total,Completed:r.o.Completed,'Not done':r.o['Not completed'],Open:r.o.Open,Cancelled:r.o.Cancelled,'Days worked':r.days,'Per day':r.perDay==null?null:+r.perDay.toFixed(1),'Rate (%)':r.rate==null?null:+r.rate.toFixed(1),'Overdue held':r.overdue})));
+    await save(fileStem()+'.xlsx',new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array',cellDates:true})]));return}
+  if(state.tab==='pmo'){const p=st.pmo,v=wkView(),wb=XLSX.utils.book_new();const areas=pmoAreas(p);const T=p.T;
+    put(wb,'Executive summary',[...head,['Week',`Week ${p.wn}`],['Completed tickets',p.cur.done],['Target',T.ct],['Efficiency',p.cur.eff==null?null:+p.cur.eff.toFixed(2)],['Efficiency target',T.eff],['Teams deployed',p.cur.dep.daysRec?+p.cur.dep.total.toFixed(1):null],['Extracted',p.cur.n],[],['CEO focus',v.ceo||'']],true);
+    put(wb,'Weekly performance',[['Week','Completed (SLI PR)','EFF','Teams deployed',...p.depSeries.map(s=>'Deployment '+s.name)],...p.W.map((w,i)=>[p.wl[i],w.done,w.eff==null?null:+w.eff.toFixed(2),w.dep.daysRec?+w.dep.total.toFixed(1):null,...p.depSeries.map(s=>s.vals[i])])],true);
+    put(wb,'Pipeline',[['Week',...p.extSeries.map(s=>s.name),'Total'],...p.W.map((w,i)=>[p.wl[i],...p.extSeries.map(s=>s.vals[i]),w.n]),[],[`Area breakdown Week ${p.wn}`,'Extracted','Share (%)'],...p.extBreak.map(x=>[x.k,x.v,+x.p.toFixed(2)]),[],['Remarks'],...p.rem.map(t=>[t.replace(/<[^>]+>/g,'')]),[],['Risks / points to watch'],...p.risk.map(t=>[t.replace(/<[^>]+>/g,'')]),[],['Management focus',v.focus||'']],true);
+    put(wb,'Capacity vs output',[['Area','Total teams','Average teams on duty','Target completed / day','Average completed / day'],...p.cap.map(c=>[c.a,+c.ttl.toFixed(1),c.ave==null?null:+c.ave.toFixed(1),+c.tgt.toFixed(1),c.aveCt==null?null:+c.aveCt.toFixed(1)]),[],[p.capIns.replace(/<[^>]+>/g,'')]],true);
+    put(wb,'QA and PPE',[['QA inspection','Standard','Substandard'],...areas.map(a=>{const q=(v.qa||{})[a]||{};return [a,+q.std||0,+q.sub||0]}),['Recommendation',v.qaRec||''],[],['PPE compliance','Compliant','Non-compliant'],...areas.map(a=>{const q=(v.ppe||{})[a]||{};return [a,+q.ok||0,+q.no||0]}),['Remarks',v.ppeRem||'']],true);
+    put(wb,'Fuel',[['Week',...getWk().fuelGroups.flatMap(g=>[g.name+' target',g.name+' actual'])],...p.weeks.map((ws,i)=>{const r=getWk().weeks[dKey(ws)];return [p.wl[i],...getWk().fuelGroups.flatMap((g,j)=>[+g.target,r&&r.fuel&&r.fuel[j]!==''&&r.fuel[j]!=null?+r.fuel[j]:null])]})],true);
+    put(wb,'Monitoring',[['Action','Expected outcome','Timing',`Evaluation Week ${p.wn}`],...v.mon.map(m=>[m.action,m.outcome,m.timing,m.ev])],true);
+    put(wb,'Strategic priorities',[['Activity','Impact','Deadline'],...v.pri.map(m=>[m.activity,m.impact,m.deadline||'']),[],['Expected result',v.expected||'']],true);
+    put(wb,'Ticket health',[['Area','Extracted','Completed (%)','RPR / AFD (%)','Unhandled (%)','Other (%)','Status'],...p.health.map(h=>[h.k,h.n,+h.c.toFixed(1),+h.ra.toFixed(1),+h.u.toFixed(1),+h.o.toFixed(1),h.status])],true);
+    await save(fileStem()+'.xlsx',new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array',cellDates:true})]));return}
+  if(state.tab==='bill'){const b=st.bill,wb=XLSX.utils.book_new();const n=b.done.length;
+    const types=[...b.byType].sort((x,z)=>z[1].n-x[1].n),areas=[...b.byArea].sort((x,z)=>z[1].n-x[1].n);
+    put(wb,'Billing summary',[...head,['Metric','Value'],['Completed tickets',n],['Ready for billing',b.ready],['Billable amount (PHP)',b.hasRates?b.amount:null],['Not done / rejected',b.nd.length],['Cancelled',b.cx],[],
+      ['Activity type','Completed','Rate (PHP)','Amount (PHP)'],...types.map(([k,t])=>[k,t.n,t.rate,t.rate==null?null:t.amt]),['Total',n,null,b.hasRates?b.amount:null],[],
+      ['Area','Completed','Not done','Cancelled','Amount (PHP)'],...areas.map(([k,a])=>[k,a.n,a.nd,a.cx,b.hasRates?a.amt:null]),[],
+      ['Validation check','Tickets'],...b.comp.map(c=>[c.k,c.n]),[],['Billing summary'],...b.ins.F.map(t=>[t.replace(/<[^>]+>/g,'')]),[],['For validation / dispute'],...b.ins.A.map(t=>[t.replace(/<[^>]+>/g,'')])],true);
+    const ok=r=>r.id&&r.date&&r.area&&r.area!=='(Blank)'&&!isBucket(r.resource);
+    put(wb,'Billing tracker',b.done.map(r=>{const v=rateFor(b.rates,r.type);return {'Activity ID':r.id,Area:r.area,Technician:r.resource,'Activity type':r.type,Status:r.status,Date:r.date,'Rate (PHP)':v,'Amount (PHP)':v,'Ready for billing':ok(r)?'YES':'NO',Issues:[!r.id&&'Missing ID',!r.date&&'Missing date',(!r.area||r.area==='(Blank)')&&'Missing area',isBucket(r.resource)&&'No technician',v==null&&b.hasRates&&'No rate'].filter(Boolean).join(', '),Source:r.src}}));
+    const u=st.unpaid;if(u){put(wb,'Unpaid - problems',[...head,['Problem','Tickets','Amount (PHP)','Solution'],...u.probs.map(p=>[p.k,p.n,p.priced?p.amt:null,p.solution]),[],['Completed',u.done],['Paid',u.paid],['Unpaid',u.unpaid.length],['Unpaid amount (PHP, estimated)',u.unpaidAmt||null]],true);
+      put(wb,'Unpaid tickets',u.items.map(x=>({'Activity ID':x.r.id,Area:x.r.area,Technician:x.r.resource,'Activity type':x.r.type,'OFSC status':x.r.status,Completed:x.r.date,'Billing status':x.b?x.b.st:'Not in tracker','Amount (PHP)':x.amt,Problem:x.problem,Solution:x.solution,Remarks:x.b?x.b.remarks:''})))}
+    put(wb,'Not done - rejected',b.nd.map(r=>({'Activity ID':r.id,Area:r.area,'Technician / bucket':r.resource,'Activity type':r.type,Status:r.status,Date:r.date,Source:r.src})));
+    await save(fileStem()+'.xlsx',new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array',cellDates:true})]));return}
   const rows=filtered(pi&&pi.from,pi&&pi.to);const m=state.map;
   const proc=rows.map(r=>({Source:r.src,Row:r.row,ID:r.id,Status:r.status,'Status group':r.group,Area:r.area,Resource:r.resource,'Activity type':r.type,Date:r.date||null,[m.value||'Measure']:r.val,Issues:r.iss.join(', ')}));
   const all=state.recs.filter(r=>r.iss.length).map(r=>({Source:r.src,Row:r.row,ID:r.id,Status:r.status,Area:r.area,Issues:r.iss.join(', ')}));
@@ -908,6 +2011,63 @@ $('#ruleDup').addEventListener('change',e=>{state.rules.dup=e.target.checked;sav
 $('#ruleCancel').addEventListener('change',e=>{state.rules.cancel=e.target.checked;saveFormat();renderReport()});
 $('#ruleOpen').addEventListener('change',e=>{state.rules.open=e.target.checked;saveFormat();renderReport()});
 $('#fArea').addEventListener('change',e=>{state.filters.area=e.target.value;renderReport()});
+$('#upFile').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)importBT(f)});
+$('#upClear').addEventListener('click',()=>{BT.file=null;BT.sheet=null;BT.map={};renderBTSetup();renderReport();toast('Billing tracker removed.')});
+$('#upMap').addEventListener('change',e=>{const el=e.target;if(el.id==='btDays'){const v=Math.round(+el.value);if(v>=1&&v<=365){BT.days=v;renderReport()}else{el.value=BT.days;toast('Enter days from 1 to 365.')}return}
+  const k=el.dataset.bt;if(!k)return;if(el.value)BT.map[k]=el.value;else delete BT.map[k];saveBTFmt();renderBTSetup();renderReport()});
+$('#upGroups').addEventListener('change',e=>{const i=e.target.dataset.btg;if(i==null)return;const v=JSON.parse($('#upGroups').dataset.vals||'[]')[+i];BT.groups[v]=e.target.value;saveBTFmt();renderBTSetup();renderReport()});
+$('#fWf').addEventListener('change',e=>{state.filters.wf=e.target.value;renderReport()});
+$('#areaMapBox').addEventListener('change',e=>{const i=e.target.dataset.am;if(i==null)return;const raw=JSON.parse($('#areaMapBox').dataset.raw||'[]')[+i];if(raw==null)return;const v=e.target.value.trim();state.rules.areaMap={...(state.rules.areaMap||{})};if(!v||v===areaAuto(raw))delete state.rules.areaMap[raw];else state.rules.areaMap[raw]=v;saveFormat();rebuild()});
+function pmoRefresh(){setTimeout(()=>{if(!current||!current.pmo)return;const id=document.activeElement&&document.activeElement.id;renderPmoEditors(current.pmo);if(state.tab==='pmo')drawCharts(current);if(id){const el=document.getElementById(id);if(el)el.focus()}},0)}
+$('#pane-pmo').addEventListener('change',e=>{const el=e.target;
+  if(el.dataset.wk){setWkField(el.dataset.wk,el.value);const k=el.dataset.wk.split('.')[0];
+    if(k==='qa'||k==='ppe'||k==='fuel')pmoRefresh();
+    if(el.tagName==='SELECT')el.className=el.value==='GOOD'?'ev-good':el.value==='POOR'?'ev-bad':el.value==='NEEDS IMPROVEMENT'?'ev-mid':'';
+    $('#pmoNote').textContent='Entries saved for this week.';return}
+  if(el.dataset.fg){const [i,f]=el.dataset.fg.split('.');const G=getWk().fuelGroups;if(!G[+i])return;G[+i][f]=f==='target'?(+el.value||0):el.value.trim()||G[+i][f];saveWk();pmoRefresh()}});
+$('#pane-pmo').addEventListener('click',e=>{let b;
+  if((b=e.target.closest('[data-rowadd]'))){const r=wkRec(true);const k=b.dataset.rowadd;r[k].push(k==='mon'?{action:'',outcome:'',timing:'',ev:'NEEDS IMPROVEMENT'}:{activity:'',impact:'',deadline:''});saveWk();renderPmoEditors(current.pmo);return}
+  if((b=e.target.closest('[data-rowdel]'))){const [k,i]=b.dataset.rowdel.split('.');const r=wkRec(true);r[k].splice(+i,1);saveWk();renderPmoEditors(current.pmo)}});
+['#tgCt','#tgEff'].forEach(id=>$(id).addEventListener('change',e=>{const v=+e.target.value;const T=getWk().targets;if(!(v>0)){e.target.value=id==='#tgCt'?T.ct:T.eff;toast('Enter a number above zero.');return}if(id==='#tgCt')T.ct=Math.round(v);else T.eff=v;saveWk();renderReport()}));
+$('#tcCol').addEventListener('change',e=>{state.rules.tc={...tcCfg(),col:e.target.value};saveFormat();rebuild()});
+['#tcRpr','#tcAfd'].forEach(id=>$(id).addEventListener('change',()=>{state.rules.tc={...tcCfg(),rpr:$('#tcRpr').value,afd:$('#tcAfd').value};saveFormat();renderTcHint();renderReport()}));
+$('#depAreas').addEventListener('change',e=>{const el=e.target;const ai=el.dataset.ai;if(ai==null)return;const D=getDep();const a=D.areas[+ai];if(!a)return;const f=el.dataset.f;
+  if(el.dataset.ti!=null){const t=a.techs[+el.dataset.ti];if(!t)return;
+    if(f==='st'){ensureDay(depDate)[t.id]=el.value;el.closest('tr').className=stCls(el.value)}else{t[f]=el.value.trim();if(f==='name')el.title=t[f]}}
+  else{a[f]=el.value.trim();if(f==='name'&&!a.name){a.name='Area';el.value='Area'}}
+  saveDep();if(current)renderDepSums(current)});
+$('#depAreas').addEventListener('click',e=>{const D=getDep();let b;
+  if((b=e.target.closest('[data-tdel]'))){const [ai,ti]=b.dataset.tdel.split(':').map(Number);D.areas[ai].techs.splice(ti,1);saveDep();renderRosterEditor();return}
+  if((b=e.target.closest('[data-tadd]'))){const ai=+b.dataset.tadd;const t={id:newId(),name:'',partner:''};D.areas[ai].techs.push(t);if(D.days[depDate])D.days[depDate][t.id]='DTY';saveDep();renderRosterEditor();const el=$(`#dt_${ai}_${D.areas[ai].techs.length-1}`);if(el)el.focus();return}
+  if((b=e.target.closest('[data-pastebtn]'))){const ai=+b.dataset.pastebtn;const ta=$('#dpaste_'+ai);const lines=ta.value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    if(!lines.length){toast('Paste names first, one per line.');return}
+    let n=0,withSt=false;const add=[];lines.forEach(l=>{const p=l.split(/\t|,/).map(x=>x.trim());if(!p[0]||/^tl\s*:/i.test(p[0]))return;const t={id:newId(),name:p[0],partner:p[2]||''};D.areas[ai].techs.push(t);add.push([t,p[1]?normSt(p[1]):'DTY']);if(p[1])withSt=true;n++});
+    if(withSt||D.days[depDate]){const m=ensureDay(depDate);add.forEach(([t,s])=>m[t.id]=s)}
+    saveDep();renderRosterEditor();toast(`Added ${n} technician${n===1?'':'s'} to ${D.areas[ai].name}.`);return}
+  if((b=e.target.closest('[data-adel]'))){const ai=+b.dataset.adel;const a=D.areas[ai];
+    if(a.techs.length&&b.dataset.confirm!=='1'){b.dataset.confirm='1';b.textContent='Remove?';toast(`Click again to remove ${a.name} and its ${a.techs.length} technicians.`);setTimeout(()=>{if(b.isConnected){b.dataset.confirm='';b.textContent='✕'}},4000);return}
+    D.areas.splice(ai,1);saveDep();renderRosterEditor()}});
+$('#depBanner').addEventListener('click',e=>{if(!e.target.closest('#depSaveDay'))return;ensureDay(depDate);saveDep();if(current)renderDepSums(current);toast('Saved '+dayName(depDate)+'.')});
+const setDepDate=k=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(k))return;depDate=k;renderRosterEditor()};
+$('#depDate').addEventListener('change',e=>{if(e.target.value)setDepDate(e.target.value);else e.target.value=depDate});
+$('#depPrev').addEventListener('click',()=>setDepDate(dKey(addDays(parseKey(depDate),-1))));
+$('#depNext').addEventListener('click',()=>setDepDate(dKey(addDays(parseKey(depDate),1))));
+$('#depToday').addEventListener('click',()=>setDepDate(dKey(today0())));
+$('#attArea').addEventListener('change',()=>{if(current)renderAtt(attCompute(current))});
+$('#depExport').addEventListener('click',exportDepHistory);
+$('#depImport').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)importDepHistory(f)});
+$('#depAddArea').addEventListener('click',()=>{const D=getDep();D.areas.push({name:'New area',tl:'',techs:[]});saveDep();renderRosterEditor();const el=$('#dan_'+(D.areas.length-1));if(el){el.focus();el.select()}});
+$('#rosterAllDuty').addEventListener('click',()=>{const m=ensureDay(depDate);allTechs().forEach(({t})=>m[t.id]='DTY');saveDep();renderRosterEditor();toast('Everyone set to DTY for '+dayName(depDate)+'.')});
+$('#depPer').addEventListener('change',e=>{const v=Math.round(+e.target.value);const D=getDep();if(!(v>=1&&v<=10)){e.target.value=D.per;toast('Enter a whole number from 1 to 10.');return}D.per=v;saveDep();if(current)renderDepSums(current)});
+function setTab(t){if(!TABS[t])return;state.tab=t;ls.set('i8ar.tab',t);autoTitle();if(current&&rosterDirty){rosterDirty=false;renderFilters();renderReport();return}if(t==='pmo'&&current)renderPmo(current);showTab();if(current)drawCharts(current)}
+let rosterDirty=false;
+$('#wkStartSel').value=String(WSD);
+$('#wkStartSel').addEventListener('change',e=>{WSD=e.target.value==='1'?1:0;ls.set('i8ar.wkstart',WSD);state.filters.period=defaultPeriod();autoTitle();renderAll();toast('Weeks now run '+wkRangeName()+'.')});
+$('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)setTab(b.dataset.tab)});
+$('.tabs').addEventListener('keydown',e=>{if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;const k=Object.keys(TABS);const i=k.indexOf(state.tab);const n=k[(i+(e.key==='ArrowRight'?1:k.length-1))%k.length];setTab(n);$('#tab-'+n).focus()});
+$('#odDays').addEventListener('change',e=>{const v=Math.round(+e.target.value);if(!(v>=1&&v<=90)){e.target.value=state.rules.overdue;toast('Use a number of days from 1 to 90.');return}state.rules.overdue=v;saveFormat();renderReport()});
+$('#rates').addEventListener('change',e=>{const i=e.target.dataset.rt;if(i==null)return;const types=JSON.parse($('#rates').dataset.types||'[]');const t=types[+i];if(t==null)return;
+  const r={...getRates()};const v=e.target.value.trim();if(v===''||!isFinite(+v)||+v<0)delete r[t];else r[t]=+v;setRates(r);renderReport()});
 $('#fPeriod').addEventListener('change',e=>{const F=state.filters;const prevPi=periodInfo();F.period=e.target.value;
   if(F.period==='custom'){
     if(prevPi){F.from=dKey(prevPi.from);F.to=dKey(addDays(prevPi.to,-1))}
@@ -918,8 +2078,11 @@ $('#fPeriod').addEventListener('change',e=>{const F=state.filters;const prevPi=p
   if(state.filters.from&&state.filters.to&&state.filters.to<state.filters.from){toast('The end date is before the start date.');return}
   autoTitle();renderReport()}));
 $('#fBy').value=ls.get('i8ar.by','');$('#fBy').addEventListener('change',e=>ls.set('i8ar.by',e.target.value));
-$('#rTitle').addEventListener('input',()=>{state.titleAuto=false});
-$('#rTitle').addEventListener('change',()=>{if(!$('#rTitle').value.trim()){state.titleAuto=true;autoTitle()}});
+$('#rTitle').addEventListener('input',()=>fitTitle());
+$('#rTitle').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur()}});
+window.addEventListener('resize',fitTitle);
+$('#rTitle').addEventListener('change',saveTitleFromInput);
+$('#titleReset').addEventListener('click',()=>{delete getTNames()[state.tab];ls.set('i8ar.titles',getTNames());autoTitle();toast('Title reset.')});
 $('#pdfBtn').addEventListener('click',exportPDF);
 $('#xlsxBtn').addEventListener('click',exportXLSX);
 function setPresent(on){document.body.classList.toggle('present',on);$('#presentBtn span').textContent=on?'Exit presentation':'Present';
@@ -931,11 +2094,10 @@ const redraw=()=>current&&drawCharts(current);
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redraw)}catch(e){}
 new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
-renderHistory();
+renderHistory();renderRosterEditor();
 if(window.XLSX)sample();else{toast('Excel reader failed to load. Reload the page.')}
 dl();
 })();
 </script>
 
-</body>
-</html>
+</body></html>
